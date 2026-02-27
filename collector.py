@@ -27,7 +27,7 @@ FEEDS = [
 ]
 
 DB_PATH = "db/news.db"
-MAX_PER_FEED = 80  # 1フィードあたり最大取得数（多すぎ防止）
+MAX_PER_FEED = 20  # 1フィードあたり最大取得数（多すぎ防止）
 
 
 def now_iso():
