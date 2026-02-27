@@ -1,0 +1,37 @@
+name: Fetch RSS
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 22 * * *"  # JST 7:10（UTC 22:10）
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run collector
+        run: |
+          python collector.py fetch
+
+      - name: Commit db
+        run: |
+          git config user.name "news-bot"
+          git config user.email "news-bot@users.noreply.github.com"
+          git add db/news.db
+          git diff --staged --quiet || git commit -m "Update news db"
+          git push
