@@ -23,7 +23,6 @@ JST = timezone(timedelta(hours=9))
 
 FEEDS = [
     ("JETRO", "https://www.jetro.go.jp/rss/biznews.xml"),
-    ("中小企業庁", "https://www.chusho.meti.go.jp/rss/index.xml"),
 ]
 
 DB_PATH = "db/news.db"
