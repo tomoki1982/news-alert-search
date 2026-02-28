@@ -959,6 +959,38 @@ async function main() {
 
   renderList(STATE.currentPool);
   wireControls();
+  hideLegacyTexts(); 
+}
+
+// ---- hide unused legacy texts: "準備中..." / "表示0件" ----
+function hideLegacyTexts() {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+
+  for (const n of nodes) {
+    const t = (n.nodeValue || "").trim();
+    if (!t) continue;
+
+    if (
+      t.includes("準備中") ||
+      t.includes("表示 0") ||
+      t.includes("表示0")
+    ) {
+      n.nodeValue = "";
+    }
+  }
+
+  qsa("*").forEach((el) => {
+    const txt = (el.textContent || "").trim();
+    if (
+      txt.includes("準備中") ||
+      txt.includes("表示 0") ||
+      txt.includes("表示0")
+    ) {
+      el.style.display = "none";
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", main);
