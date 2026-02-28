@@ -1,33 +1,33 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"3fa5-64bca6ba398f5-gzip\"",
+    "etag": "\"3fa5-64bca6ba20843-gzip\"",
     "lastModified": "Fri, 27 Feb 2026 08:57:01 GMT",
-    "updatedAt": "2026-02-28T18:50:37+09:00"
+    "updatedAt": "2026-02-28T20:41:08+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
-    "etag": "W/\"d7a80cf13ac43e6495744fa485beaf1c\"",
+    "etag": "\"d7a80cf13ac43e6495744fa485beaf1c\"",
     "lastModified": "Sat, 28 Feb 2026 09:11:39 GMT",
-    "updatedAt": "2026-02-28T19:12:42+09:00"
+    "updatedAt": "2026-02-28T20:41:09+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
-    "etag": "W/\"91ff881d3b2ed7430ec90d475b0f78db\"",
-    "lastModified": "Sat, 28 Feb 2026 09:10:30 GMT",
-    "updatedAt": "2026-02-28T19:12:42+09:00"
+    "etag": "W/\"170588a59960271f50af87d2b9226fe6\"",
+    "lastModified": "Sat, 28 Feb 2026 10:14:59 GMT",
+    "updatedAt": "2026-02-28T20:41:09+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
-    "etag": "\"e2c8df3af4a036d5663a4bb54b917bc5\"",
-    "lastModified": "Sat, 28 Feb 2026 09:13:19 GMT",
-    "updatedAt": "2026-02-28T19:12:42+09:00"
+    "etag": "W/\"e71c07e85659df14061978c5c8d48155\"",
+    "lastModified": "Sat, 28 Feb 2026 11:14:43 GMT",
+    "updatedAt": "2026-02-28T20:41:09+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
-    "etag": "W/\"bb7b4991d7cfc6b9cce66f2235aa3887\"",
-    "lastModified": "Sat, 28 Feb 2026 07:14:07 GMT",
-    "updatedAt": "2026-02-28T19:12:42+09:00"
+    "etag": "W/\"1f7b9dbcf1fd2785d959636f932d5a99\"",
+    "lastModified": "Sat, 28 Feb 2026 10:15:49 GMT",
+    "updatedAt": "2026-02-28T20:41:09+09:00"
   },
   "https://www.tdb.co.jp/rss/jouhou.rdf": {
-    "etag": "W/\"4e36-64bc2e76235fb\"",
+    "etag": "\"4e36-64bc2e76235fb\"",
     "lastModified": "Thu, 26 Feb 2026 23:58:57 GMT",
-    "updatedAt": "2026-02-28T19:12:42+09:00"
+    "updatedAt": "2026-02-28T20:41:09+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_status.xml": {
     "etag": "",
