@@ -1,43 +1,38 @@
 # export_json.py
-# db/news.db を docs/news.json に書き出す（GitHub Pages用）
-import os, json, sqlite3
+import json
+import sqlite3
+from pathlib import Path
 
 DB_PATH = "db/news.db"
-OUT_PATH = "docs/news.json"
+OUT_PATH = Path("docs/news.json")
 
 def main():
-    if not os.path.exists(DB_PATH):
-        print("DB not found:", DB_PATH)
-        return
-
-    os.makedirs("docs", exist_ok=True)
-
     conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    rows = cur.execute("""
-        SELECT id, source, title, url, published, summary
-        FROM items
-        ORDER BY published DESC
-        LIMIT 5000
-    """).fetchall()
-    conn.close()
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute("""
+        SELECT source, title, link, published, summary, fetched_at, category
+        FROM news
+        ORDER BY COALESCE(published, fetched_at) DESC
+        """).fetchall()
 
-    data = [
-        {
-            "id": r[0],
-            "source": r[1],
-            "title": r[2],
-            "url": r[3],
-            "published": r[4],
-            "summary": r[5] or ""
-        }
-        for r in rows
-    ]
+        items = []
+        for r in rows:
+            items.append({
+                "source": r["source"],
+                "title": r["title"],
+                "link": r["link"],
+                "published": r["published"],
+                "summary": r["summary"] or "",
+                "fetchedAt": r["fetched_at"],
+                "category": r["category"] or "その他",
+            })
 
-    with open(OUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
-
-    print(f"exported {len(data)} -> {OUT_PATH}")
+        OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        OUT_PATH.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"[OK] wrote {OUT_PATH} items={len(items)}")
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()
