@@ -6,5 +6,45 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "公的"
+  },
+   {
+    "id": "chusho.meti",
+    "name": "中小企業庁",
+    "url": "https://www.chusho.meti.go.jp/rss/index.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "公的"
+   },  
+   {
+    "id": "nikkei",
+    "name": "日経新聞速報",
+    "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "速報"
+  },
+   {
+    "id": "nikkei",
+    "name": "日経新聞",
+    "url": "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "政治・経済"
+   },
+   {
+    "id": "nikkei",
+    "name": "日経新聞",
+    "url": "https://assets.wor.jp/rss/rdf/nikkei/business.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ビジネス"
+  },
+   {
+    "id": "nikkei",
+    "name": "日経新聞",
+    "url": "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "マーケット"
   }
 ]
