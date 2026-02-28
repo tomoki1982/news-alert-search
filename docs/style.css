@@ -1,137 +1,154 @@
-/* docs/style.css */
-:root {
-  --bg: #f6f7f9;
-  --fg: #222;
-  --muted: #666;
-  --muted2: #777;
-  --card: #fff;
-  --border: #e3e3e3;
-  --border2: #eee;
-  --link: #0a66c2;
+/* ===== Reset ===== */
+* {
+  box-sizing: border-box;
 }
-
-* { box-sizing: border-box; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   margin: 0;
-  padding: 20px;
-  background: var(--bg);
-  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, "Noto Sans JP", sans-serif;
+  background: #f5f7fa;
+  color: #222;
 }
 
-h1 { margin: 0 0 8px; }
+/* ===== Header / Controls ===== */
 
-.rule {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 16px;
+.header {
+  background: #ffffff;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
-  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
 }
 
-.controls input,
-.controls select {
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+input[type="text"],
+select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d5db;
   font-size: 14px;
   background: #fff;
 }
 
-.controls input {
-  flex: 1;
-  min-width: 260px;
+input[type="text"] {
+  flex: 1 1 200px;
 }
 
-#meta {
-  font-size: 14px;
-  margin-bottom: 12px;
-  color: #555;
+select {
+  flex: 0 0 auto;
+}
+
+.status-bar {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ===== Main List ===== */
+
+.main {
+  padding: 16px;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 10px;
   padding: 14px;
-  margin-bottom: 12px;
-  transition: box-shadow .2s ease, transform .05s ease;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  border: 1px solid #e6e9ee;
 }
 
-.card:hover {
-  box-shadow: 0 2px 10px rgba(0,0,0,.06);
-}
-
-.small {
+.meta {
   font-size: 12px;
-  color: var(--muted2);
+  color: #777;
   margin-bottom: 6px;
 }
 
 .title {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 10px;
   line-height: 1.4;
 }
 
+/* ===== Buttons ===== */
+
 .actions {
-  margin-top: 8px;
   display: flex;
-  gap: 10px;
-  align-items: center;
   flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .btn {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f0f4f8;
   cursor: pointer;
-  font-size: 14px;
+  transition: 0.15s ease;
 }
 
 .btn:hover {
-  background: #f2f2f2;
+  background: #e2e8f0;
 }
 
-.link {
-  text-decoration: none;
-  color: var(--link);
-  font-size: 14px;
+.btn.link {
+  background: #e6f0ff;
+  border: 1px solid #bcd4ff;
 }
 
-.link:hover {
-  text-decoration: underline;
+.btn.link:hover {
+  background: #d6e6ff;
 }
+
+/* ★ 軽量で開くボタン（今回追加） */
+.btn-lite {
+  background: #ffffff;
+  border: 1px solid #cfd8dc;
+}
+
+.btn-lite:hover {
+  background: #f3f6fa;
+}
+
+/* ===== Preview ===== */
 
 .preview {
   margin-top: 10px;
   padding: 10px;
-  border: 1px solid var(--border2);
-  background: #fafafa;
-  border-radius: 10px;
-  line-height: 1.55;
-  white-space: pre-wrap;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid #e2e8f0;
 }
 
-.preview.is-hidden {
-  display: none;
-}
+/* ===== Responsive ===== */
 
-/* モバイル対応 */
-@media (max-width: 760px) {
-  body { padding: 12px; }
-  .controls { flex-direction: column; align-items: stretch; }
-  .controls input,
-  .controls select { width: 100%; }
-  .title { font-size: 15px; }
+@media (max-width: 600px) {
+  .title {
+    font-size: 15px;
+  }
+
+  .btn {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
 }
