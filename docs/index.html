@@ -1,31 +1,28 @@
-<!-- docs/index.html -->
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex,nofollow" />
-  <title>ニュース検索</title>
-
-  <!-- CSSは別ファイルで読み込み（ここ重要） -->
-  <link rel="stylesheet" href="./style.css" />
-</head>
-
 <body>
-  <h1>ニュース検索</h1>
-  <div class="rule">ルール：スペース=AND / |=OR（例： 中国 輸出|規制）</div>
+  <div class="header">
+    <h1>ニュース検索</h1>
+    <div class="rule">ルール：スペース=AND / |=OR（例：中国 輸出|規制）</div>
 
-  <div class="controls">
-    <input id="q" type="search" placeholder="キーワード（例： 中国 輸出|規制）" />
-    <select id="source" aria-label="ソース"></select>
-    <select id="category" aria-label="カテゴリ"></select>
-    <select id="range" aria-label="期間"></select>
+    <div class="controls">
+      <input id="queryInput" type="text" placeholder="キーワード（例：中国 輸出規制）" />
+      <select id="sourceSelect"></select>
+      <select id="categorySelect"></select>
+      <select id="rangeSelect"></select>
+      <button class="btn" id="refreshBtn">更新</button>
+    </div>
+
+    <div class="status-bar">
+      <div id="countLabel">総件数：0 / ヒット：0</div>
+      <div>
+        <span id="status">-</span>
+        <span id="fetchedAt"></span>
+      </div>
+    </div>
   </div>
 
-  <div id="meta"></div>
-  <div id="list"></div>
+  <div class="main">
+    <div id="list"></div>
+  </div>
 
-  <!-- JSは最後に読み込み -->
   <script src="./app.js"></script>
 </body>
-</html>
