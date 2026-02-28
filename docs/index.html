@@ -3,222 +3,61 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>軽量表示</title>
-  <link rel="stylesheet" href="./style.css" />
+  <title>News Finder</title>
+  <link rel="stylesheet" href="./style.css?v=2" />
 </head>
 <body>
-  <div class="liteWrap">
-    <div class="liteHeader">
-      <div class="liteTitle" id="ltitle">軽量表示</div>
-      <div class="liteSub" id="lurl"></div>
-      <div class="liteTools">
-        <a class="btn primary small" id="openOriginal" target="_blank" rel="noopener">元記事を開く</a>
-        <button class="btn small" id="copyUrl" type="button">URLコピー</button>
-        <a class="btn small" href="./index.html">一覧に戻る</a>
+  <div class="wrap">
+    <header class="top">
+      <div class="titleRow">
+        <div>
+          <h1 class="h1">News Finder</h1>
+          <div class="sub">直近3か月 + 過去を段階拡張（最大5年）</div>
+        </div>
+        <button id="themeToggle" class="iconBtn" type="button" aria-label="toggle theme">🌙</button>
       </div>
-      <div class="status" style="margin-top:10px;"><span id="lstatus">読み込み中…</span></div>
-    </div>
 
-    <div class="liteBody" id="lbody">読み込み中…</div>
+      <div class="panel">
+        <input id="q" class="input" type="text" placeholder="キーワード（タイトル/ソース/カテゴリ/URL）" />
+
+        <div class="row">
+          <select id="sourceFilter" class="select">
+            <option value="">ソース：すべて</option>
+          </select>
+          <select id="categoryFilter" class="select">
+            <option value="">カテゴリ：すべて</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <button id="searchBtn" class="btn primary" type="button">検索</button>
+          <button id="resetBtn" class="btn" type="button">リセット</button>
+        </div>
+
+        <div class="row">
+          <div class="chips">
+            <span class="chip">検索範囲：</span>
+            <span class="chip active">直近3か月</span>
+          </div>
+          <div class="chips">
+            <span class="chip">過去も探す</span>
+            <span class="chip">（直近1年）</span>
+          </div>
+        </div>
+
+        <div class="statusLine">
+          <span id="statusText">準備中…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div id="summary" class="summary">表示 0 件</div>
+      <div id="list" class="list"></div>
+    </main>
   </div>
 
-  <script>
-    function qs(id){ return document.getElementById(id); }
-
-    function getParam(name){
-      const u = new URL(location.href);
-      return u.searchParams.get(name) || "";
-    }
-
-    function looksLikeLinkList(lines){
-      // 行の多くがリンク（http） or 箇条書きリンクなら「目次っぽい」と判断
-      const nonEmpty = lines.filter(l => l.trim().length > 0);
-      if (nonEmpty.length < 10) return false;
-
-      const httpLines = nonEmpty.filter(l => /https?:\/\//i.test(l)).length;
-      const bulletLinkLines = nonEmpty.filter(l =>
-        /^\s*[*-]\s+/.test(l) && /https?:\/\//i.test(l)
-      ).length;
-
-      const ratio = httpLines / nonEmpty.length;
-      const ratio2 = bulletLinkLines / nonEmpty.length;
-
-      return ratio > 0.35 || ratio2 > 0.25;
-    }
-
-    function cleanJinaText(raw){
-      let text = raw || "";
-
-      // 0) "Markdown Content:" があるなら、その後ろだけを対象にする（Jinaのヘッダー除去）
-      const marker = "Markdown Content:";
-      const idx = text.indexOf(marker);
-      if (idx >= 0){
-        text = text.slice(idx + marker.length);
-      }
-
-      // 1) 先頭の Title / URL Source などを落とす
-      text = text.replace(/^Title:\s.*$/gmi, "");
-      text = text.replace(/^URL Source:\s.*$/gmi, "");
-      text = text.replace(/^Markdown Content:\s*$/gmi, "");
-
-      // 2) 行単位で掃除
-      const lines = text.split("\n");
-      const out = [];
-      for (let line of lines){
-        const s = line.trim();
-
-        // 空行はあとで詰める
-        if (!s) { out.push(""); continue; }
-
-        // 画像Markdown
-        if (s.startsWith("![")) continue;
-
-        // 典型的なナビ/メニュー語
-        const navWords = [
-          "サイト内検索","マイページ","Global Site","お問い合わせ","ジェトロについて",
-          "コンテンツ一覧","トップ","過去記事一覧","特集","検索","一覧","メンバーズ向け"
-        ];
-        if (navWords.some(w => s.includes(w)) && /https?:\/\//i.test(s)) continue;
-
-        // 「リンクだけ」の行
-        if (/^https?:\/\/\S+$/i.test(s)) continue;
-
-        // Markdownリンクだけの行  [xxx](http...)
-        if (/^\[.*\]\(https?:\/\/.*\)\s*$/i.test(s)) continue;
-
-        // 箇条書き + リンク は基本削除（目次になりやすい）
-        if (/^\s*[*-]\s+/.test(s) && /https?:\/\//i.test(s)) continue;
-
-        // 1行にURLが2個以上 → ほぼリンク集
-        const httpCount = (s.match(/https?:\/\//gi) || []).length;
-        if (httpCount >= 2) continue;
-
-        // 変な区切り線（==== など）を削除
-        if (/^=+$/.test(s) || /^-+$/.test(s)) continue;
-
-        // 長すぎる行は切る（読みやすさ/軽量）
-        if (s.length > 500) line = s.slice(0, 500) + "…";
-
-        out.push(line);
-      }
-
-      // 3) 空行を最大2つまでに圧縮
-      const out2 = [];
-      let blank = 0;
-      for (const l of out){
-        if (!l.trim()){
-          blank++;
-          if (blank <= 2) out2.push("");
-        } else {
-          blank = 0;
-          out2.push(l);
-        }
-      }
-
-      // 4) さらに「リンク集っぽい」なら、リンク行をもっと攻めて落とす（第二段）
-      const pass1 = out2.join("\n").trim();
-      const lines1 = pass1.split("\n");
-      if (looksLikeLinkList(lines1)){
-        const out3 = [];
-        for (let line of lines1){
-          const s = line.trim();
-          if (!s) { out3.push(""); continue; }
-
-          // http が入ってる行は全部落とす（本文以外をガッツリ捨てる）
-          if (/https?:\/\//i.test(s)) continue;
-
-          // 「*」だけの箇条書きも落とす
-          if (/^\s*[*-]\s*$/.test(s)) continue;
-
-          // まだメニューっぽい語が濃いなら落とす
-          const menuish = ["メニュー","トップ","一覧","検索","サイト","ページ"];
-          if (menuish.some(w => s.includes(w)) && s.length < 30) continue;
-
-          out3.push(line);
-        }
-
-        // 空行圧縮（再）
-        const out4 = [];
-        let b = 0;
-        for (const l of out3){
-          if (!l.trim()){
-            b++;
-            if (b <= 2) out4.push("");
-          } else {
-            b = 0;
-            out4.push(l);
-          }
-        }
-        return out4.join("\n").trim();
-      }
-
-      return pass1;
-    }
-
-    async function copyText(text){
-      try{
-        await navigator.clipboard.writeText(text);
-        qs("lstatus").textContent = "コピーしたで";
-      }catch{
-        qs("lstatus").textContent = "コピー失敗";
-      }
-    }
-
-    async function main(){
-      const url = getParam("u");
-      if (!url){
-        qs("lstatus").textContent = "URLが指定されてへん…";
-        qs("lbody").textContent = "一覧に戻って、もう一回「軽量表示」を押してな。";
-        return;
-      }
-
-      qs("lurl").textContent = url;
-      qs("openOriginal").href = url;
-      qs("copyUrl").addEventListener("click", ()=>copyText(url));
-
-      const jinaUrl = "https://r.jina.ai/" + url;
-
-      const controller = new AbortController();
-      const timer = setTimeout(()=>controller.abort(), 12000);
-
-      try{
-        const res = await fetch(jinaUrl, { signal: controller.signal, cache: "no-store" });
-        if (!res.ok) throw new Error(res.status + " " + res.statusText);
-        const raw = await res.text();
-
-        const cleaned = cleanJinaText(raw);
-
-        // 本文が取れたかの最低チェック：
-        // 文字数が少ない or 行の大半が短い → 目次っぽい可能性が高い
-        const lines = cleaned.split("\n").filter(l => l.trim().length > 0);
-        const shortLines = lines.filter(l => l.trim().length < 24).length;
-
-        const tooShort = cleaned.length < 200;
-        const tooMenuish = lines.length >= 10 && (shortLines / lines.length) > 0.65;
-
-        if (!cleaned || tooShort || tooMenuish){
-          qs("lstatus").textContent = "本文が取りにくい記事やった…元記事で見てな";
-          qs("lbody").textContent =
-            "このページは本文抽出がうまくいかへんタイプやったわ。\n\n" +
-            "上の「元記事を開く」で読むのが確実やで。";
-          return;
-        }
-
-        qs("lstatus").textContent = "表示OK";
-        qs("lbody").textContent = cleaned;
-
-      }catch(e){
-        qs("lstatus").textContent = "軽量取得に失敗…元記事で見てな";
-        qs("lbody").textContent =
-          "取得に失敗したわ（通信制限・相手サイトのブロック等）。\n\n" +
-          "上の「元記事を開く」で読んでな。\n\n" +
-          "エラー: " + (e && e.message ? e.message : String(e));
-      }finally{
-        clearTimeout(timer);
-      }
-    }
-
-    main();
-  </script>
+  <!-- ✅ app.js も v=2 で強制更新 -->
+  <script src="./app.js?v=2"></script>
 </body>
 </html>
