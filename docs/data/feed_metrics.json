@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-02-28T18:14:52+09:00",
+  "timeoutSec": 25,
+  "slowMs": 4000,
+  "count": 1,
+  "feeds": [
+    {
+      "name": "JETRO",
+      "url": "https://www.jetro.go.jp/rss/biznews.xml",
+      "category": "公的",
+      "status": 200,
+      "elapsedMs": 485,
+      "usedCache": false,
+      "bytes": 16375,
+      "at": "2026-02-28T18:14:52+09:00"
+    }
+  ]
+}
