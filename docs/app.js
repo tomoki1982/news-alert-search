@@ -1,19 +1,6 @@
-/* =========
-   Repo config
-   ========= */
-const REPO_OWNER  = "tomoki1982";
-const REPO_NAME   = "news-alert-search";
-const REPO_BRANCH = "main";
-
-/* =========
-   App state
-   ========= */
 const state = {
-  index: null,
   latest: [],
-  loadedMonths: new Set(), // "YYYY-MM"
-  loadedYears: 0,          // 0 = latest only, then 1..5
-  allItems: [],            // latest + loaded archive months
+  allItems: [],
 };
 
 function qs(id){ return document.getElementById(id); }
@@ -34,8 +21,7 @@ function escapeHtml(s){
 
 function parseNdjson(text){
   const out = [];
-  const lines = text.split("\n");
-  for (const line of lines){
+  for (const line of text.split("\n")){
     const t = line.trim();
     if (!t) continue;
     try { out.push(JSON.parse(t)); } catch {}
@@ -44,123 +30,25 @@ function parseNdjson(text){
 }
 
 function uniqByLink(items){
-  const best = new Map();
+  const m = new Map();
   for (const it of items){
     if (!it || !it.link) continue;
-    const prev = best.get(it.link);
-    if (!prev || (it.pubDate || "") > (prev.pubDate || "")){
-      best.set(it.link, it);
-    }
+    if (!m.has(it.link)) m.set(it.link, it);
   }
-  return Array.from(best.values())
+  return Array.from(m.values())
     .sort((a,b)=> (b.pubDate||"").localeCompare(a.pubDate||""));
-}
-
-function normalizeText(s){
-  return (s || "").toLowerCase();
-}
-
-function matchKeyword(item, q){
-  if (!q) return true;
-  const hay =
-    `${item.title||""} ${item.source||""} ${item.category||""} ${item.link||""}`.toLowerCase();
-  return hay.includes(q);
 }
 
 function formatDate(iso){
   if (!iso) return "";
   try{
     const d = new Date(iso);
-    const fmt = new Intl.DateTimeFormat("ja-JP", {
-      timeZone: "Asia/Tokyo",
+    return new Intl.DateTimeFormat("ja-JP", {
+      timeZone:"Asia/Tokyo",
       year:"numeric", month:"2-digit", day:"2-digit",
       hour:"2-digit", minute:"2-digit"
-    });
-    return fmt.format(d);
-  }catch{
-    return iso;
-  }
-}
-
-/* =========
-   Theme toggle
-   ========= */
-(function(){
-  const key = "theme";
-  const btn = qs("themeToggle");
-  if (!btn) return;
-
-  const apply = (mode) => {
-    document.documentElement.dataset.theme = mode || "";
-    btn.textContent = (mode === "dark") ? "☀️" : "🌙";
-  };
-
-  const saved = localStorage.getItem(key);
-  if (saved === "light" || saved === "dark") apply(saved);
-  else apply(null);
-
-  btn.addEventListener("click", () => {
-    const cur = document.documentElement.dataset.theme;
-    const next = (cur === "dark") ? "light" : "dark";
-    localStorage.setItem(key, next);
-    apply(next);
-  });
-})();
-
-/* =========
-   Data fetching
-   ========= */
-async function fetchText(url){
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return await res.text();
-}
-
-async function fetchJson(url){
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return await res.json();
-}
-
-function rawArchiveUrl(monthKey){
-  const yyyy = monthKey.slice(0,4);
-  return `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/archive/${yyyy}/${monthKey}.ndjson.gz`;
-}
-
-async function fetchGzipNdjson(monthKey){
-  const url = rawArchiveUrl(monthKey);
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`archive fetch failed: ${monthKey}`);
-
-  if (!("DecompressionStream" in window)){
-    throw new Error("このブラウザはgzip解凍に未対応");
-  }
-
-  const ds = new DecompressionStream("gzip");
-  const decompressed = res.body.pipeThrough(ds);
-  const text = await new Response(decompressed).text();
-  return parseNdjson(text);
-}
-
-/* =========
-   Load index / latest
-   ========= */
-async function loadIndexAndLatest(){
-  setStatus("読み込み中…");
-  const [index, latestText] = await Promise.all([
-    fetchJson("./data/index.json"),
-    fetchText("./data/latest.ndjson"),
-  ]);
-
-  state.index = index;
-  state.latest = parseNdjson(latestText);
-  state.allItems = uniqByLink(state.latest);
-  state.loadedMonths.clear();
-  state.loadedYears = 0;
-
-  populateFilters(state.allItems);
-  render(state.allItems);
-  setStatus(`準備OK（最新 ${state.latest.length} 件）`);
+    }).format(d);
+  }catch{ return iso; }
 }
 
 function populateFilters(items){
@@ -190,11 +78,8 @@ function populateFilters(items){
   });
 }
 
-/* =========
-   Search / render
-   ========= */
 function applyFilters(){
-  const q = normalizeText(qs("q").value.trim());
+  const q = (qs("q").value || "").trim().toLowerCase();
   const src = qs("sourceFilter").value;
   const cat = qs("categoryFilter").value;
 
@@ -202,14 +87,17 @@ function applyFilters(){
 
   if (src) items = items.filter(it => it.source === src);
   if (cat) items = items.filter(it => it.category === cat);
-  if (q) items = items.filter(it => matchKeyword(it, q));
-
+  if (q){
+    items = items.filter(it=>{
+      const hay = `${it.title||""} ${it.source||""} ${it.category||""} ${it.link||""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
   return items;
 }
 
 function render(items){
-  qs("summary").textContent =
-    `表示 ${items.length} 件（全読み込み ${state.allItems.length} 件）`;
+  qs("summary").textContent = `表示 ${items.length} 件（全読み込み ${state.allItems.length} 件）`;
 
   const list = qs("list");
   list.innerHTML = "";
@@ -221,13 +109,11 @@ function render(items){
     const date = escapeHtml(formatDate(it.pubDate || ""));
     const link = it.link || "";
 
-    // 🔵 Google Web Light 版（案1）
-    const liteUrl =
-      "https://googleweblight.com/i?u=" + encodeURIComponent(link);
+    // ✅ ここがポイント：軽量は自前 lite.html に飛ばす
+    const liteUrl = `./lite.html?u=${encodeURIComponent(link)}`;
 
     const card = document.createElement("div");
     card.className = "card";
-
     card.innerHTML = `
       <div class="card-title">${title}</div>
       <div class="meta">
@@ -237,18 +123,11 @@ function render(items){
         <a href="${escapeHtml(link)}" target="_blank" rel="noopener">元記事</a>
       </div>
       <div class="actions">
-        <a class="btn btn-lite small" href="${escapeHtml(link)}" target="_blank" rel="noopener">
-          元記事
-        </a>
-        <a class="btn small" href="${escapeHtml(liteUrl)}" target="_blank" rel="noopener">
-          軽量表示
-        </a>
-        <button class="btn small" type="button" data-copy="${escapeHtml(link)}">
-          URLコピー
-        </button>
+        <a class="btn small" href="${escapeHtml(link)}" target="_blank" rel="noopener">元記事</a>
+        <a class="btn primary small" href="${escapeHtml(liteUrl)}" target="_blank" rel="noopener">軽量表示</a>
+        <button class="btn small" type="button" data-copy="${escapeHtml(link)}">URLコピー</button>
       </div>
     `;
-
     list.appendChild(card);
   }
 
@@ -265,43 +144,75 @@ function render(items){
   });
 }
 
-/* =========
-   Events
-   ========= */
-function resetUI(){
-  qs("q").value = "";
-  qs("sourceFilter").value = "";
-  qs("categoryFilter").value = "";
+/* Theme toggle */
+(function(){
+  const key = "theme";
+  const btn = qs("themeToggle");
+  if (!btn) return;
+
+  const apply = (mode) => {
+    document.documentElement.dataset.theme = mode || "";
+    btn.textContent = (mode === "dark") ? "☀️" : "🌙";
+  };
+
+  const saved = localStorage.getItem(key);
+  if (saved === "light" || saved === "dark") apply(saved);
+  else apply(null);
+
+  btn.addEventListener("click", () => {
+    const cur = document.documentElement.dataset.theme;
+    const next = (cur === "dark") ? "light" : "dark";
+    localStorage.setItem(key, next);
+    apply(next);
+  });
+})();
+
+async function loadLatest(){
+  setStatus("読み込み中…");
+  const res = await fetch("./data/latest.ndjson", { cache:"no-store" });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const text = await res.text();
+  state.latest = parseNdjson(text);
+  state.allItems = uniqByLink(state.latest);
+
+  populateFilters(state.allItems);
+  render(state.allItems);
+  setStatus(`準備OK（最新 ${state.latest.length} 件）`);
 }
 
-async function main(){
-  qs("searchBtn").addEventListener("click", ()=>{
-    render(applyFilters());
-  });
-
+function initEvents(){
+  qs("searchBtn").addEventListener("click", ()=>render(applyFilters()));
   qs("resetBtn").addEventListener("click", ()=>{
-    resetUI();
+    qs("q").value = "";
+    qs("sourceFilter").value = "";
+    qs("categoryFilter").value = "";
     render(state.allItems);
   });
-
   qs("q").addEventListener("keydown", (e)=>{
-    if (e.key === "Enter"){
-      render(applyFilters());
-    }
+    if (e.key === "Enter") render(applyFilters());
   });
+  qs("sourceFilter").addEventListener("change", ()=>render(applyFilters()));
+  qs("categoryFilter").addEventListener("change", ()=>render(applyFilters()));
 
-  qs("sourceFilter").addEventListener("change", ()=>{
-    render(applyFilters());
+  // スコープボタンはUIだけ先に（過去検索は次フェーズで拡張）
+  qs("scopeLatestBtn").addEventListener("click", ()=>{
+    qs("scopeLatestBtn").classList.add("active");
+    qs("scopePastBtn").classList.remove("active");
+    setStatus("直近3か月モード（いまはlatestのみ表示）");
   });
-
-  qs("categoryFilter").addEventListener("change", ()=>{
-    render(applyFilters());
+  qs("scopePastBtn").addEventListener("click", ()=>{
+    qs("scopePastBtn").classList.add("active");
+    qs("scopeLatestBtn").classList.remove("active");
+    setStatus("過去検索は次の拡張でON（UIは先に用意済み）");
   });
-
-  await loadIndexAndLatest();
 }
 
-main().catch(e=>{
-  console.error(e);
-  setStatus(`エラー：${e.message}`);
-});
+(async function main(){
+  try{
+    initEvents();
+    await loadLatest();
+  }catch(e){
+    console.error(e);
+    setStatus(`エラー：${e.message}`);
+  }
+})();
