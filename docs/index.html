@@ -2,44 +2,37 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ニュース検索</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:16px;line-height:1.45}
-    input,select{font-size:16px;padding:10px;width:100%;box-sizing:border-box;margin:8px 0}
-    .row{display:flex;gap:8px;flex-wrap:wrap}
-    .row > *{flex:1 1 160px}
-    .item{border:1px solid #ddd;border-radius:12px;padding:12px;margin:10px 0}
-    .meta{color:#666;font-size:12px}
-    .title{font-weight:700;margin:6px 0}
-    a{word-break:break-all}
-    code{background:#f4f4f4;padding:2px 6px;border-radius:6px}
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif; margin: 24px; }
+    h1 { margin: 0 0 12px; }
+    .help { margin: 6px 0 16px; color: #444; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    input, select { font-size: 16px; padding: 10px; border: 2px solid #222; border-radius: 6px; }
+    #q { min-width: 260px; flex: 1; }
+    #source, #category, #range { min-width: 160px; }
+    .meta { margin: 10px 0 14px; color: #444; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin: 12px 0; }
+    .small { color: #666; font-size: 13px; }
+    .title { font-size: 18px; font-weight: 700; margin: 6px 0; }
+    a { color: #0b57d0; }
   </style>
 </head>
 <body>
-  <h2>ニュース検索</h2>
-
-  <div class="meta">
-    ルール：スペース=AND / <code>|</code>=OR（例：<code>中国 輸出|規制</code>）
-  </div>
+  <h1>ニュース検索</h1>
+  <div class="help">ルール：スペース=AND / | =OR（例： 中国 輸出|規制 ）</div>
 
   <div class="row">
     <input id="q" placeholder="キーワード（例: 中国 輸出|規制）" />
-    <select id="src">
-      <option value="">全ソース</option>
-    </select>
-    <select id="days">
-      <option value="7">直近7日</option>
-      <option value="30" selected>直近30日</option>
-      <option value="180">直近180日</option>
-      <option value="365">直近1年</option>
-      <option value="9999">全期間</option>
-    </select>
+    <select id="source"></select>
+    <select id="category"></select>
+    <select id="range"></select>
   </div>
 
-  <div class="meta" id="status">読み込み中…</div>
+  <div class="meta" id="meta"></div>
   <div id="list"></div>
 
-  <script src="app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
