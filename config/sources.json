@@ -8,16 +8,16 @@
     "category": "公的"
   },
    {
-    "id": "chusho.meti",
-    "name": "中小企業庁",
-    "url": "https://www.chusho.meti.go.jp/rss/index.xml",
+    "id": "datebunk",
+    "name": "帝国データバンク",
+    "url": "https://www.tdb.co.jp/rss/jouhou.rdf",
     "enabled": true,
     "frequency": "hourly",
-    "category": "公的"
+    "category": "倒産"
    },  
    {
     "id": "nikkei",
-    "name": "日経新聞速報",
+    "name": "日経新聞",
     "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
     "enabled": true,
     "frequency": "hourly",
@@ -46,5 +46,45 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "マーケット"
-  }
+  },
+  {
+    "id": "tokyoreserch",
+    "name": "東京商工リサーチ",
+    "url": "https://www.tsr-net.co.jp/rss/news_status.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "倒産"
+   },  
+   {
+    "id": "tokyoreserch",
+    "name": "東京商工リサーチ",
+    "url": "https://www.tsr-net.co.jp/rss/news_flash.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "速報"
+   },  
+  {
+    "id": "tokyoreserch",
+    "name": "東京商工リサーチ",
+    "url": "https://www.tsr-net.co.jp/rss/news.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ニュース"
+   },
+   {
+    "id": "tokyoreserch",
+    "name": "東京商工リサーチ",
+    "url": "https://www.tsr-net.co.jp/rss/news_analysis.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "レポート"
+   },
+    {
+    "id": "tokyoreserch",
+    "name": "東京商工リサーチ",
+    "url": "https://www.tsr-net.co.jp/rss/news_detail.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "エピソード"
+   }
 ]
