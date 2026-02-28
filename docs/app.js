@@ -497,7 +497,6 @@ function renderList(items) {
           <span class="pill">${source || "?"}</span>
           ${category ? `<span class="pill pill-lite">${category}</span>` : ""}
           ${dt ? `<span class="dt">${dt}</span>` : ""}
-          <a class="inline-link" href="${link}" target="_blank" rel="noopener noreferrer">記事を開く</a>
         </div>
         <div class="actions">
           <button class="btn btn-primary" data-act="open" data-url="${link}">元記事を開く</button>
