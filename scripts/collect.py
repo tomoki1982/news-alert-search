@@ -28,9 +28,6 @@ ARCHIVE_DIR = ROOT / "archive"
 KEEP_YEARS = 5
 LATEST_MONTHS = 3
 
-REQUEST_TIMEOUT = 25
-
-
 def now_jst() -> datetime:
     return datetime.now(tz=JST)
 
@@ -171,7 +168,7 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
         headers["If-Modified-Since"] = last_mod
 
     t0 = time.monotonic()
-    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+    r = requests.get(url, headers=headers, timeout=(3,5))
     elapsed_ms = int((time.monotonic() - t0) * 1000)
 
     info = {
