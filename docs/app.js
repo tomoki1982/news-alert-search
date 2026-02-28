@@ -6,9 +6,9 @@
 
    ここを自分のリポジトリに合わせて変更してな：
 */
-const REPO_OWNER = "YOUR_GITHUB_OWNER";
-const REPO_NAME  = "YOUR_REPO_NAME";
-const REPO_BRANCH = "main"; // or "master"
+const REPO_OWNER = "tomoki1982";
+const REPO_NAME  = "news-alert-search";
+const REPO_BRANCH = "main";
 
 /* =========
    App state
