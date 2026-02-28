@@ -1,21 +1,20 @@
 /* docs/app.js
    News Finder (GitHub Pages)
-   - Load docs/data/latest.ndjson (latest 3 months)
-   - Expand search to archive up to 5 years (on demand)
-   - AND/OR search: space = AND, OR tokens: | / ｜ / OR
-   - Source/Category linked filters (improvement #1)
+   Fix:
+   - Robust DOM binding (works even if ids differ)
+   - Always create status/count/results containers if missing
+   - Linked filters (improvement #1)
    - URLまとめてコピー
-   - RSS追加メモ（localStorage）: 追加/一覧/削除/JSON出力（sources.json用）
+   - RSS追加メモ（localStorage）
 */
 
 const PATHS = {
   index: "./data/index.json",
   latest: "./data/latest.ndjson",
-  metrics: "./data/feed_metrics.json", // optional
-  archiveTemplate: "../archive/{YYYY}/{YYYY-MM}.ndjson.gz",
+  archiveTemplate: "./archive/{YYYY}/{YYYY-MM}.ndjson.gz",
 };
 
-const DEFAULT_RANGE = "3m"; // 直近3か月
+const DEFAULT_RANGE = "3m";
 const MAX_YEARS = 5;
 
 const LS_KEYS = {
@@ -26,38 +25,19 @@ const LS_KEYS = {
 let STATE = {
   index: null,
   latestItems: [],
-  allItemsCache: new Map(), // key: "YYYY-MM" -> items[]
-  loadedMonths: new Set(),  // months already loaded into expanded pool
-  expandedItems: [],        // merged items from archive when expanded
-  currentPool: [],          // currently searchable pool (latest or expanded)
+  allItemsCache: new Map(), // month -> items[]
+  loadedMonths: new Set(),
+  currentPool: [],
   lastFiltered: [],
-  sources: [],
-  categories: [],
   theme: "light",
 };
 
-function qs(sel, root = document) {
-  return root.querySelector(sel);
-}
-function qsa(sel, root = document) {
-  return Array.from(root.querySelectorAll(sel));
-}
+/* ---------- tiny utils ---------- */
+const safeText = (v) => (v ?? "").toString();
+const uniq = (arr) => Array.from(new Set(arr));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function safeText(v) {
-  return (v ?? "").toString();
-}
-
-function uniq(arr) {
-  return Array.from(new Set(arr));
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function parseISOZ(s) {
-  // "2026-02-27T07:10:00Z"
-  // fallback for other ISO strings
+function parseISO(s) {
   try {
     return new Date(s);
   } catch {
@@ -65,10 +45,17 @@ function parseISOZ(s) {
   }
 }
 
-function formatJstLike(pubDateIso) {
-  const d = parseISOZ(pubDateIso);
+function monthKeyFromISO(pubDateIso) {
+  const d = parseISO(pubDateIso);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function formatLocal(pubDateIso) {
+  const d = parseISO(pubDateIso);
   if (Number.isNaN(d.getTime())) return "";
-  // Show as YYYY/MM/DD HH:MM (local time)
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -77,83 +64,168 @@ function formatJstLike(pubDateIso) {
   return `${y}/${m}/${day} ${hh}:${mm}`;
 }
 
-function monthKeyFromISO(pubDateIso) {
-  const d = parseISOZ(pubDateIso);
-  if (Number.isNaN(d.getTime())) return null;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
+function escapeHtml(s) {
+  return safeText(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function getRangeMonths(rangeValue) {
-  // 3m / 1y / 2y / 3y / 4y / 5y
-  if (!rangeValue) return 3;
-  if (rangeValue === "3m") return 3;
-  if (rangeValue.endsWith("y")) {
-    const n = parseInt(rangeValue.replace("y", ""), 10);
-    if (!Number.isFinite(n)) return 3;
-    return Math.min(Math.max(n, 1), MAX_YEARS) * 12;
+/* ---------- robust DOM finders / creators ---------- */
+function qsAny(selectors, root = document) {
+  for (const sel of selectors) {
+    const el = root.querySelector(sel);
+    if (el) return el;
   }
-  return 3;
+  return null;
 }
 
-/** ===== Search parsing =====
-  - AND: space (half/full width)
-  - OR: | / ｜ / OR button inserts " | "
-  We treat input as OR groups separated by OR token, each group is AND terms split by spaces.
-*/
-function normalizeQuery(raw) {
-  let s = safeText(raw).trim();
-  // normalize full-width spaces to half
-  s = s.replace(/\u3000/g, " ");
-  // normalize various pipes to |
-  s = s.replace(/｜/g, "|");
-  // allow " OR " as OR separator
-  s = s.replace(/\s+OR\s+/gi, " | ");
-  // compress spaces around |
-  s = s.replace(/\s*\|\s*/g, " | ");
-  // collapse multiple spaces
-  s = s.replace(/\s+/g, " ").trim();
-  return s;
+function qsa(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
 }
 
-function parseQueryToGroups(raw) {
-  const q = normalizeQuery(raw);
-  if (!q) return [];
-  const parts = q.split(" | ").map((x) => x.trim()).filter(Boolean);
-  // each part: AND terms split by spaces
-  const groups = parts.map((p) => p.split(" ").map((t) => t.trim()).filter(Boolean));
-  return groups.filter((g) => g.length > 0);
+function ensureContainers() {
+  // We try to locate an existing "panel" area near controls.
+  const panel =
+    qsAny(
+      [
+        "#panel",
+        ".panel",
+        ".controls",
+        ".control-panel",
+        "[data-role='panel']",
+        "main .card",
+        "main",
+        "body",
+      ],
+      document
+    ) || document.body;
+
+  // Status line
+  let status =
+    qsAny(
+      [
+        "#status",
+        "#statusLine",
+        "#statusText",
+        ".status",
+        ".status-line",
+        "[data-role='status']",
+      ],
+      document
+    );
+
+  if (!status) {
+    status = document.createElement("div");
+    status.id = "status";
+    status.className = "status-line";
+    status.style.marginTop = "8px";
+    panel.appendChild(status);
+  }
+
+  // Count line
+  let count =
+    qsAny(
+      [
+        "#count",
+        "#countLine",
+        "#countText",
+        ".count",
+        ".count-line",
+        "[data-role='count']",
+      ],
+      document
+    );
+
+  if (!count) {
+    count = document.createElement("div");
+    count.id = "count";
+    count.className = "count-line";
+    count.style.margin = "10px 0";
+    const main = qsAny(["main", "#main", ".main"], document) || document.body;
+    // put it under panel if possible, else in main
+    (panel.parentElement ? panel.parentElement : main).appendChild(count);
+  }
+
+  // Results container
+  let results =
+    qsAny(
+      [
+        "#results",
+        "#resultList",
+        "#list",
+        ".results",
+        ".result-list",
+        "[data-role='results']",
+      ],
+      document
+    );
+
+  if (!results) {
+    results = document.createElement("div");
+    results.id = "results";
+    results.className = "results";
+    const main = qsAny(["main", "#main", ".main"], document) || document.body;
+    main.appendChild(results);
+  }
+
+  // Toast (optional)
+  let toast =
+    qsAny(["#toast", ".toast", "[data-role='toast']"], document);
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    // minimal inline style if your css doesn't define
+    toast.style.position = "fixed";
+    toast.style.left = "50%";
+    toast.style.bottom = "18px";
+    toast.style.transform = "translateX(-50%)";
+    toast.style.padding = "10px 14px";
+    toast.style.borderRadius = "12px";
+    toast.style.background = "rgba(0,0,0,.75)";
+    toast.style.color = "#fff";
+    toast.style.fontSize = "14px";
+    toast.style.zIndex = "9999";
+    toast.style.opacity = "0";
+    toast.style.pointerEvents = "none";
+    toast.style.transition = "opacity .2s ease";
+    document.body.appendChild(toast);
+  }
+
+  return { panel, status, count, results, toast };
 }
 
-function matchItemByGroups(item, groups) {
-  if (!groups || groups.length === 0) return true;
+let DOM = null;
 
-  const hay = [
-    item.title,
-    item.source,
-    item.category,
-    item.link,
-  ].map(safeText).join(" ").toLowerCase();
-
-  // OR groups
-  return groups.some((andTerms) => {
-    return andTerms.every((term) => {
-      const t = term.toLowerCase();
-      return hay.includes(t);
-    });
-  });
+function setStatus(msg) {
+  if (!DOM) DOM = ensureContainers();
+  DOM.status.textContent = msg;
 }
 
-/** ===== Loaders ===== */
-async function fetchText(url, opts = {}) {
-  const r = await fetch(url, { cache: "no-store", ...opts });
+function setCount(msg) {
+  if (!DOM) DOM = ensureContainers();
+  DOM.count.textContent = msg;
+}
+
+function toast(msg) {
+  if (!DOM) DOM = ensureContainers();
+  DOM.toast.textContent = msg;
+  DOM.toast.style.opacity = "1";
+  setTimeout(() => (DOM.toast.style.opacity = "0"), 1400);
+}
+
+/* ---------- network ---------- */
+async function fetchText(url) {
+  const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`fetch failed: ${r.status} ${url}`);
   return await r.text();
 }
 
-async function fetchJson(url, opts = {}) {
-  const r = await fetch(url, { cache: "no-store", ...opts });
+async function fetchJson(url) {
+  const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`fetch failed: ${r.status} ${url}`);
   return await r.json();
 }
@@ -173,13 +245,13 @@ function parseNDJSON(text) {
   return out;
 }
 
-// Minimal gunzip in browser: rely on DecompressionStream (Chrome/Edge/Android OK)
 async function fetchGzNdjson(url) {
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`fetch failed: ${r.status} ${url}`);
   const buf = await r.arrayBuffer();
+
   if (!("DecompressionStream" in window)) {
-    throw new Error("DecompressionStream not supported in this browser");
+    throw new Error("DecompressionStream not supported");
   }
   const ds = new DecompressionStream("gzip");
   const stream = new Response(new Blob([buf]).stream().pipeThrough(ds));
@@ -195,101 +267,79 @@ function buildArchiveUrl(monthKey) {
 }
 
 function dedupeByLink(items) {
-  const best = new Map(); // link -> item (newest pubDate wins)
+  const best = new Map();
   for (const it of items) {
-    const link = safeText(it.link);
+    const link = safeText(it.link).trim();
     if (!link) continue;
     const prev = best.get(link);
-    if (!prev) {
-      best.set(link, it);
-    } else {
-      if (safeText(it.pubDate) > safeText(prev.pubDate)) best.set(link, it);
-    }
+    if (!prev) best.set(link, it);
+    else if (safeText(it.pubDate) > safeText(prev.pubDate)) best.set(link, it);
   }
   const arr = Array.from(best.values());
   arr.sort((a, b) => safeText(b.pubDate).localeCompare(safeText(a.pubDate)));
   return arr;
 }
 
-async function loadIndex() {
-  STATE.index = await fetchJson(PATHS.index);
-  return STATE.index;
+/* ---------- AND/OR query ---------- */
+function normalizeQuery(raw) {
+  let s = safeText(raw).trim();
+  s = s.replace(/\u3000/g, " "); // full-width space -> half
+  s = s.replace(/｜/g, "|");
+  s = s.replace(/\s+OR\s+/gi, " | ");
+  s = s.replace(/\s*\|\s*/g, " | ");
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
 }
 
-async function loadLatest() {
-  const text = await fetchText(PATHS.latest);
-  const items = parseNDJSON(text);
-  STATE.latestItems = dedupeByLink(items);
-  return STATE.latestItems;
+function parseQueryToGroups(raw) {
+  const q = normalizeQuery(raw);
+  if (!q) return [];
+  const parts = q.split(" | ").map((x) => x.trim()).filter(Boolean);
+  return parts
+    .map((p) => p.split(" ").map((t) => t.trim()).filter(Boolean))
+    .filter((g) => g.length);
 }
 
-function setCurrentPool(pool) {
-  STATE.currentPool = pool;
-  rebuildFacetOptionsFromPool();
+function matchItemByGroups(item, groups) {
+  if (!groups || !groups.length) return true;
+  const hay = [item.title, item.source, item.category, item.link]
+    .map(safeText)
+    .join(" ")
+    .toLowerCase();
+
+  return groups.some((andTerms) =>
+    andTerms.every((t) => hay.includes(t.toLowerCase()))
+  );
 }
 
-function rebuildFacetOptionsFromPool() {
-  const srcs = [];
-  const cats = [];
-  for (const it of STATE.currentPool) {
-    const s = safeText(it.source).trim();
-    const c = safeText(it.category).trim();
-    if (s) srcs.push(s);
-    if (c) cats.push(c);
-  }
-  STATE.sources = uniq(srcs).sort((a, b) => a.localeCompare(b, "ja"));
-  STATE.categories = uniq(cats).sort((a, b) => a.localeCompare(b, "ja"));
-}
-
-/** ===== Filter linkage (improvement #1) =====
-  - Source options depend on selected category
-  - Category options depend on selected source
-*/
+/* ---------- linked filters (improvement #1) ---------- */
 function computeLinkedOptions(pool, selectedSource, selectedCategory) {
-  const sourcesSet = new Set();
-  const categoriesSet = new Set();
+  const sources = new Set();
+  const categories = new Set();
 
   for (const it of pool) {
     const s = safeText(it.source).trim();
     const c = safeText(it.category).trim();
 
-    // For sources: apply selectedCategory filter only
+    // sources filtered only by category
     if (!selectedCategory || selectedCategory === "__all__") {
-      if (s) sourcesSet.add(s);
+      if (s) sources.add(s);
     } else {
-      if (c === selectedCategory && s) sourcesSet.add(s);
+      if (c === selectedCategory && s) sources.add(s);
     }
 
-    // For categories: apply selectedSource filter only
+    // categories filtered only by source
     if (!selectedSource || selectedSource === "__all__") {
-      if (c) categoriesSet.add(c);
+      if (c) categories.add(c);
     } else {
-      if (s === selectedSource && c) categoriesSet.add(c);
+      if (s === selectedSource && c) categories.add(c);
     }
   }
 
   return {
-    sources: Array.from(sourcesSet).sort((a, b) => a.localeCompare(b, "ja")),
-    categories: Array.from(categoriesSet).sort((a, b) => a.localeCompare(b, "ja")),
+    sources: Array.from(sources).sort((a, b) => a.localeCompare(b, "ja")),
+    categories: Array.from(categories).sort((a, b) => a.localeCompare(b, "ja")),
   };
-}
-
-/** ===== UI helpers ===== */
-function setStatus(msg) {
-  const el = qs("#status") || qs("[data-role='status']");
-  if (el) el.textContent = msg;
-}
-
-function setCount(msg) {
-  const el = qs("#count") || qs("[data-role='count']");
-  if (el) el.textContent = msg;
-}
-
-function ensureRuleLine() {
-  const rule = qs("#rule") || qs("[data-role='rule']");
-  if (!rule) return;
-  rule.textContent =
-    "ルール：スペース（全角/半角）=AND、ORボタン または「|」「｜」=OR（例： 中国 輸出規制 | 半導体）";
 }
 
 function setSelectOptions(selectEl, options, allLabel) {
@@ -297,12 +347,13 @@ function setSelectOptions(selectEl, options, allLabel) {
   const current = selectEl.value;
   const allValue = "__all__";
   const html = [
-    `<option value="${allValue}">${allLabel}</option>`,
-    ...options.map((o) => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`),
+    `<option value="${allValue}">${escapeHtml(allLabel)}</option>`,
+    ...options.map(
+      (o) => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`
+    ),
   ].join("");
   selectEl.innerHTML = html;
 
-  // restore if possible
   if (current && (current === allValue || options.includes(current))) {
     selectEl.value = current;
   } else {
@@ -310,28 +361,30 @@ function setSelectOptions(selectEl, options, allLabel) {
   }
 }
 
-function escapeHtml(s) {
-  return safeText(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function toast(msg) {
-  const el = qs("#toast") || qs("[data-role='toast']");
-  if (el) {
-    el.textContent = msg;
-    el.classList.add("show");
-    setTimeout(() => el.classList.remove("show"), 1600);
-    return;
+/* ---------- range ---------- */
+function getRangeMonths(rangeValue) {
+  if (!rangeValue) return 3;
+  if (rangeValue === "3m") return 3;
+  if (rangeValue.endsWith("y")) {
+    const n = parseInt(rangeValue.replace("y", ""), 10);
+    if (!Number.isFinite(n)) return 3;
+    return Math.min(Math.max(n, 1), MAX_YEARS) * 12;
   }
-  // fallback
-  console.log(msg);
+  return 3;
 }
 
-function openUrlInNewTab(url) {
+function rangeLabel(v) {
+  if (v === "3m") return "直近3か月（標準）";
+  if (v === "1y") return "直近1年";
+  if (v === "2y") return "直近2年";
+  if (v === "3y") return "直近3年";
+  if (v === "4y") return "直近4年";
+  if (v === "5y") return "直近5年";
+  return "直近3か月（標準）";
+}
+
+/* ---------- rendering ---------- */
+function openUrl(url) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
@@ -342,7 +395,6 @@ async function copyToClipboard(text) {
     await navigator.clipboard.writeText(t);
     toast("コピーしたで");
   } catch {
-    // fallback
     const ta = document.createElement("textarea");
     ta.value = t;
     document.body.appendChild(ta);
@@ -353,23 +405,27 @@ async function copyToClipboard(text) {
   }
 }
 
-/** ===== Rendering ===== */
 function renderList(items) {
-  const box = qs("#results") || qs("[data-role='results']");
-  if (!box) return;
+  if (!DOM) DOM = ensureContainers();
+  const box = DOM.results;
 
   const maxShow = 30;
   const shown = items.slice(0, maxShow);
-
   setCount(`表示 ${shown.length} 件（全読み込み ${items.length} 件）`);
+
+  if (shown.length === 0) {
+    box.innerHTML = `<div style="opacity:.7;padding:14px;">該当なし</div>`;
+    return;
+  }
 
   const html = shown
     .map((it) => {
       const title = escapeHtml(it.title || "");
       const source = escapeHtml(it.source || "");
       const category = escapeHtml(it.category || "");
-      const dt = escapeHtml(formatJstLike(it.pubDate || ""));
+      const dt = escapeHtml(formatLocal(it.pubDate || ""));
       const link = escapeHtml(it.link || "");
+
       return `
       <div class="card" data-link="${link}">
         <div class="title">${title}</div>
@@ -389,35 +445,66 @@ function renderList(items) {
 
   box.innerHTML = html;
 
-  // bind buttons
   qsa("[data-act='open']", box).forEach((b) => {
-    b.addEventListener("click", () => openUrlInNewTab(b.getAttribute("data-url")));
+    b.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      openUrl(b.getAttribute("data-url"));
+    });
   });
   qsa("[data-act='copy']", box).forEach((b) => {
-    b.addEventListener("click", () => copyToClipboard(b.getAttribute("data-url")));
+    b.addEventListener("click", async (ev) => {
+      ev.stopPropagation();
+      await copyToClipboard(b.getAttribute("data-url"));
+    });
   });
 
-  // card tap opens
   qsa(".card", box).forEach((c) => {
-    c.addEventListener("click", (ev) => {
-      const act = ev.target?.getAttribute?.("data-act");
-      if (act) return; // buttons handle themselves
+    c.addEventListener("click", () => {
       const url = c.getAttribute("data-link");
-      if (url) openUrlInNewTab(url);
+      if (url) openUrl(url);
     });
   });
 }
 
-function applyFiltersAndRender() {
-  const qEl = qs("#q") || qs("#query") || qs("input[type='text']");
-  const srcEl = qs("#source") || qs("#sourceSel") || qs("select[name='source']");
-  const catEl = qs("#category") || qs("#categorySel") || qs("select[name='category']");
-  const rangeEl = qs("#range") || qs("#rangeSel") || qs("select[name='range']");
+function getControls() {
+  const qEl =
+    qsAny(["#q", "#query", "input[type='text']"], document);
 
+  const srcEl =
+    qsAny(["#source", "#sourceSel", "select[name='source']"], document);
+
+  const catEl =
+    qsAny(["#category", "#categorySel", "select[name='category']"], document);
+
+  const rangeEl =
+    qsAny(["#range", "#rangeSel", "select[name='range']"], document);
+
+  const searchBtn =
+    qsAny(["#btnSearch", "[data-act='search']"], document);
+
+  const resetBtn =
+    qsAny(["#btnReset", "[data-act='reset']"], document);
+
+  const copyUrlsBtn =
+    qsAny(["#btnCopyUrls", "[data-act='copy-urls']"], document);
+
+  const andBtn =
+    qsAny(["#btnAnd", "[data-act='and']"], document);
+
+  const orBtn =
+    qsAny(["#btnOr", "[data-act='or']"], document);
+
+  const themeBtn =
+    qsAny(["#themeToggle", "#toggleTheme", "[data-act='theme']"], document);
+
+  return { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn };
+}
+
+function applyFiltersAndRender() {
+  const { qEl, srcEl, catEl } = getControls();
   const query = safeText(qEl?.value);
   const selectedSource = safeText(srcEl?.value || "__all__");
   const selectedCategory = safeText(catEl?.value || "__all__");
-
   const groups = parseQueryToGroups(query);
 
   const filtered = STATE.currentPool.filter((it) => {
@@ -429,51 +516,29 @@ function applyFiltersAndRender() {
   STATE.lastFiltered = filtered;
   renderList(filtered);
 
-  // keep linked options fresh
+  // linked options
   const linked = computeLinkedOptions(STATE.currentPool, selectedSource, selectedCategory);
-  // Rebuild options based on *the other* selection
-  // but we need to call with current values to keep consistent:
   setSelectOptions(srcEl, linked.sources, "ソース：すべて");
   setSelectOptions(catEl, linked.categories, "カテゴリ：すべて");
-
-  // range label in status
-  const r = safeText(rangeEl?.value || DEFAULT_RANGE);
-  const label = rangeLabel(r);
-  setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${label}`);
 }
 
-function rangeLabel(v) {
-  if (v === "3m") return "直近3か月（標準）";
-  if (v === "1y") return "直近1年";
-  if (v === "2y") return "直近2年";
-  if (v === "3y") return "直近3年";
-  if (v === "4y") return "直近4年";
-  if (v === "5y") return "直近5年";
-  return "直近3か月（標準）";
+async function copyFilteredUrls() {
+  const list = STATE.lastFiltered || [];
+  if (!list.length) {
+    toast("コピーするURLが無いで");
+    return;
+  }
+  const urls = list.map((it) => safeText(it.link)).filter(Boolean);
+  await copyToClipboard(urls.join("\n"));
 }
 
-function ensureRangeOptions() {
-  const rangeEl = qs("#range") || qs("#rangeSel") || qs("select[name='range']");
-  if (!rangeEl) return;
-  // If already populated, keep
-  if (rangeEl.options && rangeEl.options.length >= 3) return;
-
-  const opts = [
-    { v: "3m", t: "検索範囲：直近3か月（標準）" },
-    { v: "1y", t: "検索範囲：直近1年" },
-    { v: "2y", t: "検索範囲：直近2年" },
-    { v: "3y", t: "検索範囲：直近3年" },
-    { v: "4y", t: "検索範囲：直近4年" },
-    { v: "5y", t: "検索範囲：直近5年" },
-  ];
-  rangeEl.innerHTML = opts.map(o => `<option value="${o.v}">${o.t}</option>`).join("");
-  rangeEl.value = DEFAULT_RANGE;
+/* ---------- pool loading ---------- */
+function setCurrentPool(pool) {
+  STATE.currentPool = pool;
 }
 
-/** ===== Expand pool (load archive months) ===== */
 async function ensurePoolByRange(rangeValue) {
   const monthsNeeded = getRangeMonths(rangeValue);
-  // If 3m => latest only
   if (monthsNeeded <= 3) {
     setCurrentPool(STATE.latestItems);
     return;
@@ -484,69 +549,39 @@ async function ensurePoolByRange(rangeValue) {
     return;
   }
 
-  // months list in index is ascending; we want last N months up to range
   const allMonths = STATE.index.months.slice(); // ascending
-  const target = allMonths.slice(-monthsNeeded); // last N months
+  const target = allMonths.slice(-monthsNeeded);
   const targetSet = new Set(target);
 
-  // Load missing months
   const toLoad = target.filter((m) => !STATE.loadedMonths.has(m));
-  if (toLoad.length === 0) {
-    // already loaded, just rebuild pool from cache
-    const merged = mergeExpandedFromTarget(targetSet);
-    setCurrentPool(merged);
-    return;
-  }
-
-  setStatus("過去データ読み込み中…（最初だけ少し待ってな）");
-
-  for (const mk of toLoad) {
-    const url = buildArchiveUrl(mk);
-    try {
-      const items = await fetchGzNdjson(url);
-      STATE.allItemsCache.set(mk, items);
-      STATE.loadedMonths.add(mk);
-      // gentle pacing
+  if (toLoad.length) {
+    setStatus("過去データ読み込み中…（最初だけ少し待ってな）");
+    for (const mk of toLoad) {
+      try {
+        const url = buildArchiveUrl(mk);
+        const items = await fetchGzNdjson(url);
+        STATE.allItemsCache.set(mk, items);
+      } catch (e) {
+        console.warn("archive load failed", mk, e);
+      } finally {
+        STATE.loadedMonths.add(mk);
+      }
       await sleep(60);
-    } catch (e) {
-      console.warn("archive load failed", mk, e);
-      // mark as loaded to avoid retry storm (optional)
-      STATE.loadedMonths.add(mk);
     }
   }
 
-  const merged = mergeExpandedFromTarget(targetSet);
-  setCurrentPool(merged);
-
-  setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(rangeValue)}`);
-}
-
-function mergeExpandedFromTarget(targetSet) {
   const merged = [];
   for (const [mk, items] of STATE.allItemsCache.entries()) {
-    if (!targetSet.has(mk)) continue;
-    merged.push(...items);
+    if (targetSet.has(mk)) merged.push(...items);
   }
-  // Also include latest in case archive missing
   merged.push(...STATE.latestItems);
-  return dedupeByLink(merged);
+  setCurrentPool(dedupeByLink(merged));
 }
 
-/** ===== URLまとめてコピー ===== */
-async function copyFilteredUrls() {
-  const list = STATE.lastFiltered?.length ? STATE.lastFiltered : [];
-  if (list.length === 0) {
-    toast("コピーするURLが無いで");
-    return;
-  }
-  const urls = list.map((it) => safeText(it.link)).filter(Boolean);
-  await copyToClipboard(urls.join("\n"));
-}
-
-/** ===== Theme ===== */
+/* ---------- theme ---------- */
 function applyTheme(theme) {
   STATE.theme = theme;
-  document.documentElement.dataset.theme = theme; // CSS側で使える
+  document.documentElement.dataset.theme = theme;
   try {
     localStorage.setItem(LS_KEYS.theme, theme);
   } catch {}
@@ -556,48 +591,36 @@ function toggleTheme() {
   applyTheme(STATE.theme === "dark" ? "light" : "dark");
 }
 
-/** ===== AND / OR helper buttons ===== */
+function initTheme() {
+  let theme = "light";
+  try {
+    theme = localStorage.getItem(LS_KEYS.theme) || "light";
+  } catch {}
+  applyTheme(theme === "dark" ? "dark" : "light");
+}
+
+/* ---------- AND/OR buttons ---------- */
 function insertToQuery(token) {
-  const qEl = qs("#q") || qs("#query") || qs("input[type='text']");
+  const { qEl } = getControls();
   if (!qEl) return;
   const start = qEl.selectionStart ?? qEl.value.length;
   const end = qEl.selectionEnd ?? qEl.value.length;
   const before = qEl.value.slice(0, start);
   const after = qEl.value.slice(end);
-
-  const insert = token;
-  qEl.value = before + insert + after;
-
-  const pos = (before + insert).length;
+  qEl.value = before + token + after;
+  const pos = (before + token).length;
   qEl.focus();
   try {
     qEl.setSelectionRange(pos, pos);
   } catch {}
 }
 
-function wireAndOrButtons() {
-  const andBtn = qs("#btnAnd") || qs("[data-act='and']");
-  const orBtn = qs("#btnOr") || qs("[data-act='or']");
-  if (andBtn) andBtn.addEventListener("click", () => insertToQuery(" "));
-  if (orBtn) orBtn.addEventListener("click", () => insertToQuery(" | "));
-}
-
-/** ===== RSS Memo (localStorage) =====
-  UI:
-    - button next to theme toggle
-    - panel modal with form:
-        name, url, category
-      list:
-        each item has copy(JSON line), delete
-      export:
-        - copy as JSON array for sources.json
-*/
+/* ---------- RSS memo ---------- */
 function loadRssMemo() {
   try {
     const raw = localStorage.getItem(LS_KEYS.rssMemo);
     const arr = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(arr)) return arr;
-    return [];
+    return Array.isArray(arr) ? arr : [];
   } catch {
     return [];
   }
@@ -620,40 +643,19 @@ function slugId(name, url) {
   return `${base || "rss"}-${tail}`;
 }
 
-function ensureRssMemoButton() {
-  // Prefer explicit container if exists
-  const themeBtn =
-    qs("#themeToggle") ||
-    qs("#toggleTheme") ||
-    qs("[data-act='theme']");
-  const headerRight =
-    qs("#headerRight") ||
-    qs("[data-role='header-right']") ||
-    (themeBtn ? themeBtn.parentElement : null) ||
-    qs("header") ||
-    document.body;
-
-  // Create button if not exist
-  if (qs("#btnRssMemo")) return;
-
-  const btn = document.createElement("button");
-  btn.id = "btnRssMemo";
-  btn.type = "button";
-  btn.className = "btn btn-lite";
-  btn.textContent = "RSS追加メモ";
-
-  // place next to theme toggle if possible
-  if (themeBtn && themeBtn.parentElement) {
-    themeBtn.parentElement.insertBefore(btn, themeBtn.nextSibling);
-  } else {
-    headerRight.appendChild(btn);
-  }
-
-  btn.addEventListener("click", openRssMemoPanel);
+function toSourcesJsonArray(memos) {
+  return memos.map((m) => ({
+    id: safeText(m.id) || slugId(m.name, m.url),
+    name: safeText(m.name),
+    url: safeText(m.url),
+    enabled: true,
+    frequency: "hourly",
+    category: safeText(m.category || ""),
+  }));
 }
 
 function ensureRssMemoPanel() {
-  if (qs("#rssMemoModal")) return;
+  if (document.querySelector("#rssMemoModal")) return;
 
   const modal = document.createElement("div");
   modal.id = "rssMemoModal";
@@ -665,10 +667,9 @@ function ensureRssMemoPanel() {
         <div class="modal-title">RSS追加メモ</div>
         <button class="btn btn-lite" data-act="close">閉じる</button>
       </div>
-
       <div class="modal-body">
         <div class="hint">
-          ここは<strong>メモ</strong>やで（収集に反映するには、コピーした内容を <code>config/sources.json</code> に貼る必要がある）。
+          ここは<strong>メモ</strong>やで（収集に反映するには、コピーした内容を <code>config/sources.json</code> に貼ってな）。
         </div>
 
         <div class="form">
@@ -705,100 +706,63 @@ function ensureRssMemoPanel() {
   `;
   document.body.appendChild(modal);
 
-  // close handlers
-  qsa("[data-act='close']", modal).forEach((x) => x.addEventListener("click", closeRssMemoPanel));
+  // close
+  qsa("[data-act='close']", modal).forEach((x) =>
+    x.addEventListener("click", () => (modal.style.display = "none"))
+  );
 
-  // action buttons
-  qs("#memoAdd", modal).addEventListener("click", onMemoAdd);
-  qs("#memoCopyAll", modal).addEventListener("click", onMemoCopyAll);
-  qs("#memoClearAll", modal).addEventListener("click", onMemoClearAll);
-}
+  // add
+  modal.querySelector("#memoAdd").addEventListener("click", () => {
+    const name = safeText(modal.querySelector("#memoName")?.value).trim();
+    const url = safeText(modal.querySelector("#memoUrl")?.value).trim();
+    const category = safeText(modal.querySelector("#memoCategory")?.value).trim();
+    if (!url) return toast("URLは必須やで");
 
-function openRssMemoPanel() {
-  ensureRssMemoPanel();
-  refreshRssMemoList();
-  const modal = qs("#rssMemoModal");
-  modal.style.display = "block";
-}
+    const memos = loadRssMemo();
+    if (memos.some((m) => safeText(m.url) === url)) return toast("同じURLはもう入ってるで");
 
-function closeRssMemoPanel() {
-  const modal = qs("#rssMemoModal");
-  if (modal) modal.style.display = "none";
-}
+    memos.unshift({
+      id: slugId(name, url),
+      name: name || url,
+      url,
+      category: category || "",
+      createdAt: new Date().toISOString(),
+    });
+    saveRssMemo(memos);
 
-function onMemoAdd() {
-  const name = safeText(qs("#memoName")?.value).trim();
-  const url = safeText(qs("#memoUrl")?.value).trim();
-  const category = safeText(qs("#memoCategory")?.value).trim();
+    modal.querySelector("#memoName").value = "";
+    modal.querySelector("#memoUrl").value = "";
+    modal.querySelector("#memoCategory").value = "";
 
-  if (!url) {
-    toast("URLは必須やで");
-    return;
-  }
-
-  const memos = loadRssMemo();
-
-  // prevent exact duplicate url
-  if (memos.some((m) => safeText(m.url) === url)) {
-    toast("同じURLはもう入ってるで");
-    return;
-  }
-
-  memos.unshift({
-    id: slugId(name, url),
-    name: name || url,
-    url,
-    category: category || "",
-    createdAt: new Date().toISOString(),
+    refreshRssMemoList();
+    toast("追加したで");
   });
 
-  saveRssMemo(memos);
+  // copy all
+  modal.querySelector("#memoCopyAll").addEventListener("click", async () => {
+    const memos = loadRssMemo();
+    if (!memos.length) return toast("メモが空やで");
+    const payload = toSourcesJsonArray(memos);
+    await copyToClipboard(JSON.stringify(payload, null, 2));
+  });
 
-  // clear inputs
-  if (qs("#memoName")) qs("#memoName").value = "";
-  if (qs("#memoUrl")) qs("#memoUrl").value = "";
-  if (qs("#memoCategory")) qs("#memoCategory").value = "";
-
-  refreshRssMemoList();
-  toast("追加したで");
-}
-
-function toSourcesJsonArray(memos) {
-  // output format aligns with collect.py:
-  // [{"id":"...", "name":"...", "url":"...", "enabled": true, "frequency":"hourly", "category":"..."}]
-  return memos.map((m) => ({
-    id: safeText(m.id) || slugId(m.name, m.url),
-    name: safeText(m.name),
-    url: safeText(m.url),
-    enabled: true,
-    frequency: "hourly",
-    category: safeText(m.category || ""),
-  }));
-}
-
-async function onMemoCopyAll() {
-  const memos = loadRssMemo();
-  if (memos.length === 0) {
-    toast("メモが空やで");
-    return;
-  }
-  const payload = toSourcesJsonArray(memos);
-  await copyToClipboard(JSON.stringify(payload, null, 2));
-}
-
-function onMemoClearAll() {
-  if (!confirm("RSSメモを全部消す？")) return;
-  saveRssMemo([]);
-  refreshRssMemoList();
-  toast("全部消したで");
+  // clear all
+  modal.querySelector("#memoClearAll").addEventListener("click", () => {
+    if (!confirm("RSSメモを全部消す？")) return;
+    saveRssMemo([]);
+    refreshRssMemoList();
+    toast("全部消したで");
+  });
 }
 
 function refreshRssMemoList() {
-  const box = qs("#memoItems");
+  const modal = document.querySelector("#rssMemoModal");
+  if (!modal) return;
+  const box = modal.querySelector("#memoItems");
   if (!box) return;
 
   const memos = loadRssMemo();
-  if (memos.length === 0) {
+  if (!memos.length) {
     box.innerHTML = `<div class="empty">まだメモが無いで。URLを入れて追加してな。</div>`;
     return;
   }
@@ -845,20 +809,56 @@ function refreshRssMemoList() {
   });
 }
 
-/** ===== Wiring ===== */
+function ensureRssMemoButton() {
+  if (document.querySelector("#btnRssMemo")) return;
+
+  // theme button exists in your UI (moon icon)
+  const { themeBtn } = getControls();
+
+  const btn = document.createElement("button");
+  btn.id = "btnRssMemo";
+  btn.type = "button";
+  btn.className = "btn btn-lite";
+  btn.textContent = "RSS追加メモ";
+
+  if (themeBtn && themeBtn.parentElement) {
+    themeBtn.parentElement.insertBefore(btn, themeBtn.nextSibling);
+  } else {
+    // fallback: header right-ish
+    const header = qsAny(["header", ".header", ".topbar", "body"], document) || document.body;
+    header.appendChild(btn);
+  }
+
+  btn.addEventListener("click", () => {
+    ensureRssMemoPanel();
+    refreshRssMemoList();
+    const modal = document.querySelector("#rssMemoModal");
+    modal.style.display = "block";
+  });
+}
+
+/* ---------- boot wiring ---------- */
 function wireControls() {
-  const searchBtn = qs("#btnSearch") || qs("[data-act='search']");
-  const resetBtn = qs("#btnReset") || qs("[data-act='reset']");
-  const copyUrlsBtn = qs("#btnCopyUrls") || qs("[data-act='copy-urls']");
-  const themeBtn = qs("#themeToggle") || qs("#toggleTheme") || qs("[data-act='theme']");
-  const qEl = qs("#q") || qs("#query") || qs("input[type='text']");
-  const srcEl = qs("#source") || qs("#sourceSel") || qs("select[name='source']");
-  const catEl = qs("#category") || qs("#categorySel") || qs("select[name='category']");
-  const rangeEl = qs("#range") || qs("#rangeSel") || qs("select[name='range']");
+  const { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn } = getControls();
+
+  // ensure range select has values (if empty in HTML)
+  if (rangeEl && rangeEl.options && rangeEl.options.length <= 1) {
+    rangeEl.innerHTML = `
+      <option value="3m">検索範囲：直近3か月（標準）</option>
+      <option value="1y">検索範囲：直近1年</option>
+      <option value="2y">検索範囲：直近2年</option>
+      <option value="3y">検索範囲：直近3年</option>
+      <option value="4y">検索範囲：直近4年</option>
+      <option value="5y">検索範囲：直近5年</option>
+    `.trim();
+  }
+  if (rangeEl) rangeEl.value = rangeEl.value || DEFAULT_RANGE;
 
   if (searchBtn) {
     searchBtn.addEventListener("click", async () => {
-      await ensurePoolByRange(rangeEl?.value || DEFAULT_RANGE);
+      const rv = rangeEl?.value || DEFAULT_RANGE;
+      await ensurePoolByRange(rv);
+      setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(rv)}`);
       applyFiltersAndRender();
     });
   }
@@ -870,6 +870,7 @@ function wireControls() {
       if (catEl) catEl.value = "__all__";
       if (rangeEl) rangeEl.value = DEFAULT_RANGE;
       await ensurePoolByRange(DEFAULT_RANGE);
+      setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
       applyFiltersAndRender();
     });
   }
@@ -882,83 +883,80 @@ function wireControls() {
     themeBtn.addEventListener("click", toggleTheme);
   }
 
-  // live update for filters to keep linked options nice
-  if (srcEl) {
-    srcEl.addEventListener("change", () => applyFiltersAndRender());
+  if (andBtn) andBtn.addEventListener("click", () => insertToQuery(" "));
+  if (orBtn) orBtn.addEventListener("click", () => insertToQuery(" | "));
+
+  if (srcEl) srcEl.addEventListener("change", applyFiltersAndRender);
+  if (catEl) catEl.addEventListener("change", applyFiltersAndRender);
+
+  if (rangeEl) {
+    rangeEl.addEventListener("change", async () => {
+      const rv = rangeEl.value || DEFAULT_RANGE;
+      await ensurePoolByRange(rv);
+      setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(rv)}`);
+      applyFiltersAndRender();
+    });
   }
-  if (catEl) {
-    catEl.addEventListener("change", () => applyFiltersAndRender());
-  }
+
   if (qEl) {
     qEl.addEventListener("keydown", async (ev) => {
       if (ev.key === "Enter") {
         ev.preventDefault();
-        await ensurePoolByRange(rangeEl?.value || DEFAULT_RANGE);
+        const rv = rangeEl?.value || DEFAULT_RANGE;
+        await ensurePoolByRange(rv);
+        setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(rv)}`);
         applyFiltersAndRender();
       }
     });
   }
 
-  if (rangeEl) {
-    rangeEl.addEventListener("change", async () => {
-      await ensurePoolByRange(rangeEl.value || DEFAULT_RANGE);
-      applyFiltersAndRender();
-    });
-  }
-
-  wireAndOrButtons();
   ensureRssMemoButton();
 }
 
-function initTheme() {
-  let theme = "light";
-  try {
-    theme = localStorage.getItem(LS_KEYS.theme) || "light";
-  } catch {}
-  applyTheme(theme === "dark" ? "dark" : "light");
-}
-
-/** ===== Boot ===== */
+/* ---------- main ---------- */
 async function main() {
-  ensureRuleLine();
-  ensureRangeOptions();
+  DOM = ensureContainers();
   initTheme();
-  ensureRssMemoButton();
 
   setStatus("読み込み中…");
 
   try {
-    await loadIndex();
+    STATE.index = await fetchJson(PATHS.index);
   } catch (e) {
-    console.warn("index load failed", e);
+    console.warn("index.json load failed", e);
+    // still continue with latest only
   }
 
+  let latestText;
   try {
-    await loadLatest();
+    latestText = await fetchText(PATHS.latest);
   } catch (e) {
-    setStatus("latest読み込み失敗（Actionsがまだ生成してない可能性）");
-    console.error(e);
+    console.error("latest.ndjson load failed", e);
+    setStatus("latest.ndjson が読めへん（生成前 or パス違い）");
     setCurrentPool([]);
+    renderList([]);
     wireControls();
     return;
   }
 
-  // default pool is latest (3m)
+  const latest = parseNDJSON(latestText);
+  STATE.latestItems = dedupeByLink(latest);
+
+  // default pool
   setCurrentPool(STATE.latestItems);
-
-  // initial select options
-  const srcEl = qs("#source") || qs("#sourceSel") || qs("select[name='source']");
-  const catEl = qs("#category") || qs("#categorySel") || qs("select[name='category']");
-  setSelectOptions(srcEl, STATE.sources, "ソース：すべて");
-  setSelectOptions(catEl, STATE.categories, "カテゴリ：すべて");
-
-  // bind controls
-  wireControls();
-
-  // first render
-  setStatus(`準備OK（最新 ${STATE.latestItems.length} 件）`);
   STATE.lastFiltered = STATE.currentPool;
+
+  // initial filter options
+  const { srcEl, catEl } = getControls();
+  const srcs = uniq(STATE.currentPool.map((x) => safeText(x.source).trim()).filter(Boolean)).sort((a, b) => a.localeCompare(b, "ja"));
+  const cats = uniq(STATE.currentPool.map((x) => safeText(x.category).trim()).filter(Boolean)).sort((a, b) => a.localeCompare(b, "ja"));
+  setSelectOptions(srcEl, srcs, "ソース：すべて");
+  setSelectOptions(catEl, cats, "カテゴリ：すべて");
+
+  setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
   renderList(STATE.currentPool);
+
+  wireControls();
 }
 
 document.addEventListener("DOMContentLoaded", main);
