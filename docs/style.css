@@ -73,8 +73,22 @@ body{
   flex-wrap: wrap;
 }
 
+/* 検索欄＋AND/ORボタン */
+.qRow{
+  display:flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.qBtns{
+  display:flex;
+  gap: 8px;
+}
+
 .input{
-  width: 100%;
+  flex: 1;
+  min-width: 240px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text);
@@ -109,7 +123,7 @@ body{
 }
 
 .btn.small{
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 12px;
 }
 
