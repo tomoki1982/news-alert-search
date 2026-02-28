@@ -1,99 +1,14 @@
+<!-- docs/index.html -->
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
   <title>ニュース検索</title>
 
-  <style>
-body{
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
-  background: #f6f7f9;
-  color: #222;
-}
-h1{ margin-bottom: 8px; }
-.rule{ font-size: 14px; color: #666; margin-bottom: 16px; }
-
-.controls{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.controls input,
-.controls select{
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-}
-.controls input{
-  flex: 1;
-  min-width: 240px;
-}
-
-#meta{
-  font-size: 14px;
-  margin-bottom: 12px;
-  color: #555;
-}
-
-.card{
-  background: #fff;
-  border: 1px solid #e3e3e3;
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 12px;
-  transition: box-shadow 0.2s ease;
-}
-.card:hover{ box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-
-.small{ font-size: 12px; color: #777; margin-bottom: 6px; }
-.title{ font-size: 16px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
-
-.actions{
-  margin-top: 8px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.actions a{
-  text-decoration: none;
-  color: #0a66c2;
-  font-size: 14px;
-}
-.actions a:hover{ text-decoration: underline; }
-
-.btn{
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.btn:hover{ background: #f2f2f2; }
-
-.preview{
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #eee;
-  background: #fafafa;
-  border-radius: 8px;
-  line-height: 1.5;
-  font-size: 14px;
-  white-space: pre-wrap;
-}
-
-@media (max-width: 600px){
-  body{ padding: 12px; }
-  .controls{ flex-direction: column; }
-  .controls input, .controls select{ width: 100%; }
-  .title{ font-size: 15px; }
-}
-  </style>
+  <!-- CSSは別ファイルで読み込み（ここ重要） -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
 
 <body>
@@ -101,15 +16,16 @@ h1{ margin-bottom: 8px; }
   <div class="rule">ルール：スペース=AND / |=OR（例： 中国 輸出|規制）</div>
 
   <div class="controls">
-    <input id="q" type="text" placeholder="キーワード（例：中国 輸出|規制）" />
-    <select id="source"></select>
-    <select id="category"></select>
-    <select id="range"></select>
+    <input id="q" type="search" placeholder="キーワード（例： 中国 輸出|規制）" />
+    <select id="source" aria-label="ソース"></select>
+    <select id="category" aria-label="カテゴリ"></select>
+    <select id="range" aria-label="期間"></select>
   </div>
 
   <div id="meta"></div>
   <div id="list"></div>
 
+  <!-- JSは最後に読み込み -->
   <script src="./app.js"></script>
 </body>
 </html>
