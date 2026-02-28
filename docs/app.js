@@ -483,28 +483,28 @@ function renderList(items) {
   }
 
   box.innerHTML = shown
-    .map((it) => {
-      const title = escapeHtml(it.title || "");
-      const source = escapeHtml(it.source || "");
-      const category = escapeHtml(it.category || "");
-      const dt = escapeHtml(formatLocal(it.pubDate || ""));
-      const link = escapeHtml(it.link || "");
+  .map((it) => {
+    const title = escapeHtml(it.title || "");
+    const source = escapeHtml(it.source || "");
+    const category = escapeHtml(it.category || "");
+    const dt = escapeHtml(formatLocal(it.pubDate || ""));
+    const link = escapeHtml(it.link || "");
 
-      return `
-      <div class="card" data-link="${link}">
-        <div class="title">${title}</div>
-        <div class="meta">
-          <span class="pill">${source || "?"}</span>
-          ${category ? `<span class="pill pill-lite">${category}</span>` : ""}
-          ${dt ? `<span class="dt">${dt}</span>` : ""}
-        </div>
-        <div class="actions">
-          <button class="btn btn-primary" data-act="open" data-url="${link}">元記事を開く</button>
-          <button class="btn" data-act="copy" data-url="${link}">URLコピー</button>
-        </div>
-      </div>`;
-    })
-    .join("");
+    return `
+    <div class="card" data-link="${link}">
+      <div class="title">${title}</div>
+      <div class="meta">
+        <span class="pill">${source || "?"}</span>
+        ${category ? `<span class="pill pill-lite">${category}</span>` : ""}
+        ${dt ? `<span class="dt">${dt}</span>` : ""}
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" data-act="open" data-url="${link}">元記事を開く</button>
+        <button class="btn" data-act="copy" data-url="${link}">URLコピー</button>
+      </div>
+    </div>`;
+  })
+  .join("");
 
   qsa("[data-act='open']", box).forEach((b) => {
     b.addEventListener("click", (ev) => {
