@@ -1,10 +1,10 @@
 /* docs/app.js
    News Finder (GitHub Pages)
-   - Robust control detection (selects are detected by option text like "ソース", "カテゴリ", "検索範囲")
+   - Robust control detection (selects detected by option text like "ソース", "カテゴリ", "検索範囲")
    - Linked filters (improvement #1)
    - URLまとめてコピー（フィルタ後の結果）
    - RSS追加メモ（localStorageに保存、sources.json用にまとめコピー）
-   - 表示件数はデフォルト30（変更できる「表示件数」セレクト追加）
+   - 表示件数（30/50/100/全部）
 */
 
 const PATHS = {
@@ -140,7 +140,11 @@ function ensureContainers() {
     document.body.appendChild(toast);
   }
 
-  return { status, count, results, toast, main };
+  // control bar (検索/リセットがいる行を特定)
+  const searchBtnGuess = qsa("button").find((b) => safeText(b.textContent).trim() === "検索");
+  const controlBar = searchBtnGuess?.parentElement || main;
+
+  return { status, count, results, toast, main, controlBar };
 }
 
 let DOM = null;
@@ -245,12 +249,11 @@ function matchItemByGroups(item, groups) {
   );
 }
 
-/* ---------- control detection (超重要) ---------- */
+/* ---------- control detection ---------- */
 function detectSelects() {
   const selects = qsa("select");
 
   const pick = (keyword) => {
-    // 1) option text に keyword を含む select を探す
     for (const s of selects) {
       const txt = safeText(s.options?.[0]?.textContent || "");
       const allTxt = Array.from(s.options || [])
@@ -259,7 +262,6 @@ function detectSelects() {
         .join(" ");
       if (txt.includes(keyword) || allTxt.includes(keyword)) return s;
     }
-    // 2) placeholder的に近いlabelを探す（selectの親要素内のテキスト）
     for (const s of selects) {
       const parentText = safeText(s.parentElement?.textContent || "");
       if (parentText.includes(keyword)) return s;
@@ -275,12 +277,9 @@ function detectSelects() {
 }
 
 function detectInputsAndButtons() {
-  const qEl =
-    qsAny(["#q", "#query", "input[type='text']"], document);
+  const qEl = qsAny(["#q", "#query", "input[type='text']"], document);
 
-  // ボタンは data-act があれば優先、なければ文言で拾う
   const buttons = qsa("button");
-
   const pickBtnByActOrText = (act, text) => {
     const byAct = qs(`[data-act='${act}']`);
     if (byAct) return byAct;
@@ -293,14 +292,15 @@ function detectInputsAndButtons() {
 
   const searchBtn = pickBtnByActOrText("search", "検索");
   const resetBtn = pickBtnByActOrText("reset", "リセット");
-  const copyUrlsBtn = pickBtnByActOrText("copy-urls", "URLまとめてコピー");
 
   const andBtn = pickBtnByActOrText("and", "AND");
   const orBtn = pickBtnByActOrText("or", "OR");
 
-  // ダークモードは月アイコンボタン(既存)を拾う
   const themeBtn =
     qsAny(["#themeToggle", "#toggleTheme", "[data-act='theme']", ".theme-toggle"], document);
+
+  // まとめてコピーは「必ず生成」するので、ここでは拾うだけ（あれば使う）
+  const copyUrlsBtn = pickBtnByActOrText("copy-urls", "URLまとめてコピー");
 
   return { qEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn };
 }
@@ -379,7 +379,7 @@ function rangeLabel(v) {
   return "直近3か月（標準）";
 }
 
-/* ---------- rendering ---------- */
+/* ---------- clipboard/open ---------- */
 function openUrl(url) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
@@ -400,8 +400,45 @@ async function copyToClipboard(text) {
   }
 }
 
+/* ---------- URLまとめてコピー（重要：必ずボタン生成） ---------- */
+function ensureCopyUrlsButton() {
+  if (!DOM) DOM = ensureContainers();
+
+  // 既にあるならそれを使う
+  let btn = qsa("button").find((b) => safeText(b.textContent).trim() === "URLまとめてコピー");
+  if (btn) {
+    btn.dataset.act = btn.dataset.act || "copy-urls";
+    return btn;
+  }
+
+  // 無ければ生成：検索/リセットの横に入れる
+  const { searchBtn, resetBtn } = getControls();
+  const anchor = resetBtn || searchBtn;
+
+  btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn";
+  btn.textContent = "URLまとめてコピー";
+  btn.dataset.act = "copy-urls";
+
+  if (anchor && anchor.parentElement) {
+    anchor.parentElement.appendChild(btn);
+  } else {
+    // 最悪 controlBar に入れる
+    DOM.controlBar.appendChild(btn);
+  }
+  return btn;
+}
+
+async function copyFilteredUrls() {
+  const list = STATE.lastFiltered || [];
+  if (!list.length) return toast("コピーするURLが無いで");
+  const urls = list.map((it) => safeText(it.link)).filter(Boolean);
+  await copyToClipboard(urls.join("\n"));
+}
+
+/* ---------- rendering ---------- */
 function ensureShowLimitSelect() {
-  // 既にあるなら何もしない
   if (qs("#showLimit")) return;
 
   const { rangeEl } = getControls();
@@ -512,13 +549,6 @@ function applyFiltersAndRender() {
   setSelectOptions(catEl, linked.categories, "カテゴリ：すべて");
 
   renderList(filtered);
-}
-
-async function copyFilteredUrls() {
-  const list = STATE.lastFiltered || [];
-  if (!list.length) return toast("コピーするURLが無いで");
-  const urls = list.map((it) => safeText(it.link)).filter(Boolean);
-  await copyToClipboard(urls.join("\n"));
 }
 
 /* ---------- pool loading ---------- */
@@ -780,7 +810,6 @@ function refreshRssMemoList() {
 }
 
 function ensureRssMemoButton() {
-  // すでにHTML側にあるボタンを優先（テキストで拾う）
   const existing = qsa("button").find((b) => safeText(b.textContent).trim() === "RSS追加メモ");
   if (existing) {
     existing.addEventListener("click", () => {
@@ -791,7 +820,6 @@ function ensureRssMemoButton() {
     return;
   }
 
-  // なければ作る（テーマボタンの隣）
   const { themeBtn } = getControls();
   const btn = document.createElement("button");
   btn.type = "button";
@@ -813,9 +841,8 @@ function ensureRssMemoButton() {
 
 /* ---------- wiring ---------- */
 function wireControls() {
-  const { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn } = getControls();
+  const { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, andBtn, orBtn, themeBtn } = getControls();
 
-  // range selectが空なら補完
   if (rangeEl && (!rangeEl.options || rangeEl.options.length <= 1)) {
     rangeEl.innerHTML = `
       <option value="3m">検索範囲：直近3か月（標準）</option>
@@ -829,6 +856,10 @@ function wireControls() {
   if (rangeEl) rangeEl.value = rangeEl.value || DEFAULT_RANGE;
 
   ensureShowLimitSelect();
+
+  // ✅ まとめてコピーを必ず表示
+  const copyBtn = ensureCopyUrlsButton();
+  copyBtn.addEventListener("click", copyFilteredUrls);
 
   if (searchBtn) {
     searchBtn.addEventListener("click", async () => {
@@ -850,10 +881,6 @@ function wireControls() {
       setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
       applyFiltersAndRender();
     });
-  }
-
-  if (copyUrlsBtn) {
-    copyUrlsBtn.addEventListener("click", copyFilteredUrls);
   }
 
   if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
@@ -916,11 +943,9 @@ async function main() {
   const latest = parseNDJSON(latestText);
   STATE.latestItems = dedupeByLink(latest);
 
-  // default pool
   STATE.currentPool = STATE.latestItems;
   STATE.lastFiltered = STATE.currentPool;
 
-  // 初回 options セット
   const { srcEl, catEl } = getControls();
   const srcs = uniq(STATE.currentPool.map((x) => safeText(x.source).trim()).filter(Boolean))
     .sort((a, b) => a.localeCompare(b, "ja"));
