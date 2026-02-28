@@ -4,11 +4,7 @@ const state = {
 };
 
 function qs(id){ return document.getElementById(id); }
-
-function setStatus(msg){
-  const el = qs("statusText");
-  if (el) el.textContent = msg;
-}
+function setStatus(msg){ const el = qs("statusText"); if (el) el.textContent = msg; }
 
 function escapeHtml(s){
   return String(s ?? "")
@@ -84,9 +80,9 @@ function applyFilters(){
   const cat = qs("categoryFilter").value;
 
   let items = state.allItems;
-
   if (src) items = items.filter(it => it.source === src);
   if (cat) items = items.filter(it => it.category === cat);
+
   if (q){
     items = items.filter(it=>{
       const hay = `${it.title||""} ${it.source||""} ${it.category||""} ${it.link||""}`.toLowerCase();
@@ -107,25 +103,38 @@ function render(items){
     const src = escapeHtml(it.source || "");
     const cat = escapeHtml(it.category || "");
     const date = escapeHtml(formatDate(it.pubDate || ""));
-    const link = it.link || "";
+    const link = (it.link || "").trim();
 
-    // ✅ ここがポイント：軽量は自前 lite.html に飛ばす
-    const liteUrl = `./lite.html?u=${encodeURIComponent(link)}`;
+    // ✅ 必ず u= を付ける（キャッシュ破壊も v=2 で固定）
+    const liteUrl = link ? `./lite.html?v=2&u=${encodeURIComponent(link)}` : "";
 
     const card = document.createElement("div");
     card.className = "card";
+
+    const liteBtn = link
+      ? `<a class="btn primary small" href="${escapeHtml(liteUrl)}" target="_blank" rel="noopener">軽量表示</a>`
+      : `<span class="btn primary small" style="opacity:.45;pointer-events:none;">軽量表示</span>`;
+
+    const openBtn = link
+      ? `<a class="btn small" href="${escapeHtml(link)}" target="_blank" rel="noopener">元記事</a>`
+      : `<span class="btn small" style="opacity:.45;pointer-events:none;">元記事</span>`;
+
+    const copyBtn = link
+      ? `<button class="btn small" type="button" data-copy="${escapeHtml(link)}">URLコピー</button>`
+      : `<span class="btn small" style="opacity:.45;pointer-events:none;">URLコピー</span>`;
+
     card.innerHTML = `
       <div class="card-title">${title}</div>
       <div class="meta">
         <span class="badge">${src}</span>
         ${cat ? `<span class="badge">${cat}</span>` : ""}
         ${date ? `<span>${date}</span>` : ""}
-        <a href="${escapeHtml(link)}" target="_blank" rel="noopener">元記事</a>
+        ${link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener">元記事</a>` : ""}
       </div>
       <div class="actions">
-        <a class="btn small" href="${escapeHtml(link)}" target="_blank" rel="noopener">元記事</a>
-        <a class="btn primary small" href="${escapeHtml(liteUrl)}" target="_blank" rel="noopener">軽量表示</a>
-        <button class="btn small" type="button" data-copy="${escapeHtml(link)}">URLコピー</button>
+        ${openBtn}
+        ${liteBtn}
+        ${copyBtn}
       </div>
     `;
     list.appendChild(card);
@@ -193,18 +202,6 @@ function initEvents(){
   });
   qs("sourceFilter").addEventListener("change", ()=>render(applyFilters()));
   qs("categoryFilter").addEventListener("change", ()=>render(applyFilters()));
-
-  // スコープボタンはUIだけ先に（過去検索は次フェーズで拡張）
-  qs("scopeLatestBtn").addEventListener("click", ()=>{
-    qs("scopeLatestBtn").classList.add("active");
-    qs("scopePastBtn").classList.remove("active");
-    setStatus("直近3か月モード（いまはlatestのみ表示）");
-  });
-  qs("scopePastBtn").addEventListener("click", ()=>{
-    qs("scopePastBtn").classList.add("active");
-    qs("scopeLatestBtn").classList.remove("active");
-    setStatus("過去検索は次の拡張でON（UIは先に用意済み）");
-  });
 }
 
 (async function main(){
