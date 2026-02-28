@@ -142,5 +142,13 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "下請"
+  },
+  {
+    "id": "ZEIKAN",
+    "name": "税関",
+    "url": "https://www.customs.go.jp/news.rss",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "税関"
   }
 ]
