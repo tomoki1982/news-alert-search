@@ -142,13 +142,11 @@ select {
 
 /* ===== Responsive ===== */
 
-@media (max-width: 600px) {
-  .title {
-    font-size: 15px;
+@media (max-width: 600px){
+  input[type="text"], select, .btn{
+    width: 100%;
   }
-
-  .btn {
-    font-size: 12px;
-    padding: 6px 8px;
+  .actions{
+    width: 100%;
   }
 }
