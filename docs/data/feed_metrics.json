@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T20:41:13+09:00",
+  "generatedAt": "2026-02-28T21:00:07+09:00",
   "connectTimeoutSec": 3,
   "readTimeoutSec": 5,
   "timeoutSec": 5,
@@ -9,7 +9,7 @@
       "url": "https://www.jetro.go.jp/rss/biznews.xml",
       "category": "公的",
       "status": 200,
-      "elapsedMs": 149,
+      "elapsedMs": 122,
       "bytes": 16375,
       "items": 40,
       "error": ""
@@ -19,7 +19,7 @@
       "url": "https://www.tdb.co.jp/rss/jouhou.rdf",
       "category": "倒産",
       "status": 304,
-      "elapsedMs": 785,
+      "elapsedMs": 953,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -28,30 +28,30 @@
       "name": "日経新聞",
       "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
       "category": "速報",
-      "status": 304,
-      "elapsedMs": 124,
-      "bytes": 0,
-      "items": 0,
+      "status": 200,
+      "elapsedMs": 144,
+      "bytes": 14020,
+      "items": 30,
       "error": ""
     },
     {
       "name": "日経新聞",
       "url": "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf",
       "category": "政治・経済",
-      "status": 200,
-      "elapsedMs": 57,
-      "bytes": 14334,
-      "items": 30,
+      "status": 304,
+      "elapsedMs": 81,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
       "name": "日経新聞",
       "url": "https://assets.wor.jp/rss/rdf/nikkei/business.rdf",
       "category": "ビジネス",
-      "status": 200,
-      "elapsedMs": 53,
-      "bytes": 14294,
-      "items": 30,
+      "status": 304,
+      "elapsedMs": 75,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
@@ -59,7 +59,7 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 51,
+      "elapsedMs": 727,
       "bytes": 14176,
       "items": 30,
       "error": ""
@@ -69,7 +69,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_status.xml",
       "category": "倒産",
       "status": 304,
-      "elapsedMs": 721,
+      "elapsedMs": 695,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -79,7 +79,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_flash.xml",
       "category": "速報",
       "status": 304,
-      "elapsedMs": 771,
+      "elapsedMs": 646,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -89,7 +89,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news.xml",
       "category": "ニュース",
       "status": 304,
-      "elapsedMs": 702,
+      "elapsedMs": 725,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -99,7 +99,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_analysis.xml",
       "category": "レポート",
       "status": 304,
-      "elapsedMs": 1005,
+      "elapsedMs": 872,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -109,7 +109,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_detail.xml",
       "category": "エピソード",
       "status": 304,
-      "elapsedMs": 720,
+      "elapsedMs": 612,
       "bytes": 0,
       "items": 0,
       "error": ""
