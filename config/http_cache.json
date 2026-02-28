@@ -1,57 +1,57 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"3fa5-64bca6ba20843-gzip\"",
+    "etag": "\"3fa5-64bca6ba398f5-gzip\"",
     "lastModified": "Fri, 27 Feb 2026 08:57:01 GMT",
-    "updatedAt": "2026-02-28T23:48:46+09:00"
+    "updatedAt": "2026-03-01T05:50:41+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
-    "etag": "W/\"3ed94ef8b5d66ab73c8b9d4936c093aa\"",
-    "lastModified": "Sat, 28 Feb 2026 13:11:30 GMT",
-    "updatedAt": "2026-02-28T23:48:47+09:00"
+    "etag": "W/\"7b9b9c80cea14c074137a55fb5834771\"",
+    "lastModified": "Sat, 28 Feb 2026 18:10:12 GMT",
+    "updatedAt": "2026-03-01T05:50:42+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
-    "etag": "\"3887661e9ab825778858ba7d5173c43d\"",
-    "lastModified": "Sat, 28 Feb 2026 12:15:51 GMT",
-    "updatedAt": "2026-02-28T23:48:47+09:00"
+    "etag": "W/\"d5b405769748af1c54cbfdca12128b67\"",
+    "lastModified": "Sat, 28 Feb 2026 19:10:53 GMT",
+    "updatedAt": "2026-03-01T05:50:42+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
-    "etag": "\"b94591ea15fb67b79a3167ed45281fd9\"",
-    "lastModified": "Sat, 28 Feb 2026 13:11:52 GMT",
-    "updatedAt": "2026-02-28T23:48:47+09:00"
+    "etag": "W/\"844a11bd41955b8f47456684b95e1e9a\"",
+    "lastModified": "Sat, 28 Feb 2026 19:10:52 GMT",
+    "updatedAt": "2026-03-01T05:50:42+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
-    "etag": "\"a2acac523c5dd9fc2e717504ab17b413\"",
-    "lastModified": "Sat, 28 Feb 2026 12:11:55 GMT",
-    "updatedAt": "2026-02-28T23:48:47+09:00"
+    "etag": "W/\"694e125386cde52cb10a04f209db8f2c\"",
+    "lastModified": "Sat, 28 Feb 2026 18:14:09 GMT",
+    "updatedAt": "2026-03-01T05:50:42+09:00"
   },
   "https://www.tdb.co.jp/rss/jouhou.rdf": {
     "etag": "\"4e36-64bc2e76235fb\"",
     "lastModified": "Thu, 26 Feb 2026 23:58:57 GMT",
-    "updatedAt": "2026-02-28T23:48:46+09:00"
+    "updatedAt": "2026-03-01T05:50:42+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_status.xml": {
     "etag": "",
-    "lastModified": "Fri, 27 Feb 2026 22:00:02 GMT",
-    "updatedAt": "2026-02-28T19:12:43+09:00"
+    "lastModified": "Sat, 28 Feb 2026 15:05:14 GMT",
+    "updatedAt": "2026-03-01T05:50:43+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_flash.xml": {
     "etag": "",
-    "lastModified": "Fri, 27 Feb 2026 22:00:02 GMT",
-    "updatedAt": "2026-02-28T19:12:43+09:00"
+    "lastModified": "Sat, 28 Feb 2026 15:05:14 GMT",
+    "updatedAt": "2026-03-01T05:50:44+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news.xml": {
     "etag": "",
-    "lastModified": "Fri, 27 Feb 2026 22:00:02 GMT",
-    "updatedAt": "2026-02-28T19:12:44+09:00"
+    "lastModified": "Sat, 28 Feb 2026 15:05:14 GMT",
+    "updatedAt": "2026-03-01T05:50:44+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_analysis.xml": {
     "etag": "",
-    "lastModified": "Fri, 27 Feb 2026 22:00:02 GMT",
-    "updatedAt": "2026-02-28T19:12:45+09:00"
+    "lastModified": "Sat, 28 Feb 2026 15:05:14 GMT",
+    "updatedAt": "2026-03-01T05:50:45+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_detail.xml": {
     "etag": "",
-    "lastModified": "Fri, 27 Feb 2026 22:00:06 GMT",
-    "updatedAt": "2026-02-28T19:12:46+09:00"
+    "lastModified": "Sat, 28 Feb 2026 15:05:20 GMT",
+    "updatedAt": "2026-03-01T05:50:46+09:00"
   }
 }
