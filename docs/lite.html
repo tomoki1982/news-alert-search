@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>軽量表示</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="liteWrap">
+    <div class="liteHeader">
+      <div class="liteTitle" id="ltitle">軽量表示</div>
+      <div class="liteSub" id="lurl"></div>
+      <div class="liteTools">
+        <a class="btn primary small" id="openOriginal" target="_blank" rel="noopener">元記事を開く</a>
+        <button class="btn small" id="copyUrl" type="button">URLコピー</button>
+        <a class="btn small" href="./index.html">一覧に戻る</a>
+      </div>
+      <div class="status" style="margin-top:10px;"><span id="lstatus">読み込み中…</span></div>
+    </div>
+
+    <div class="liteBody" id="lbody">読み込み中…</div>
+  </div>
+
+  <script>
+    function qs(id){ return document.getElementById(id); }
+
+    function getParam(name){
+      const u = new URL(location.href);
+      return u.searchParams.get(name) || "";
+    }
+
+    function cleanJinaText(t){
+      // 1) 行単位で「ナビ/大量リンク/画像」を削る
+      const lines = t.split("\n");
+      const out = [];
+      let kept = 0;
+
+      for (let line of lines){
+        const s = line.trim();
+        if (!s) { out.push(""); continue; }
+
+        // 画像っぽいの
+        if (s.startsWith("![")) continue;
+
+        // ひたすらリンクの羅列を削る
+        const httpCount = (s.match(/https?:\/\//g) || []).length;
+        if (httpCount >= 2) continue;
+
+        // メニュー系によくある
+        if (s.includes("サイト内検索")) continue;
+        if (s.includes("マイページ")) continue;
+        if (s.includes("Global Site")) continue;
+
+        // 箇条書きでリンクだけが続く長行は削る
+        if ((s.startsWith("*") || s.startsWith("-")) && s.includes("http") && s.length > 120) continue;
+
+        // ものすごく長い行は切る（読みやすさ＆軽量化）
+        if (s.length > 400) line = s.slice(0, 400) + "…";
+
+        out.push(line);
+        kept++;
+      }
+
+      // 2) 空行を詰める
+      const out2 = [];
+      let blank = 0;
+      for (const l of out){
+        if (!l.trim()){
+          blank++;
+          if (blank <= 2) out2.push("");
+        } else {
+          blank = 0;
+          out2.push(l);
+        }
+      }
+
+      // 3) あまりに短い（＝本文取れてない）場合はそのまま返す
+      return out2.join("\n").trim();
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        qs("lstatus").textContent = "コピーしたで";
+      }catch{
+        qs("lstatus").textContent = "コピー失敗";
+      }
+    }
+
+    async function main(){
+      const url = getParam("u");
+      if (!url){
+        qs("lstatus").textContent = "URLが指定されてへん…";
+        qs("lbody").textContent = "一覧に戻って、もう一回「軽量表示」を押してな。";
+        return;
+      }
+
+      qs("lurl").textContent = url;
+      qs("openOriginal").href = url;
+      qs("copyUrl").addEventListener("click", ()=>copyText(url));
+
+      // r.jina.ai へ（※この方式は外部サービス依存やけど、404よりは安定）
+      const jinaUrl = "https://r.jina.ai/" + url;
+
+      const controller = new AbortController();
+      const timer = setTimeout(()=>controller.abort(), 12000); // 12秒で諦める
+
+      try{
+        const res = await fetch(jinaUrl, { signal: controller.signal, cache: "no-store" });
+        if (!res.ok) throw new Error(res.status + " " + res.statusText);
+        const text = await res.text();
+
+        const cleaned = cleanJinaText(text);
+
+        if (!cleaned || cleaned.length < 80){
+          qs("lstatus").textContent = "本文が取りにくい記事やった…元記事で見てな";
+          qs("lbody").textContent = "本文抽出がうまくいかへん記事やったわ。\n上の「元記事を開く」で見てな。";
+          return;
+        }
+
+        qs("lstatus").textContent = "表示OK";
+        qs("lbody").textContent = cleaned;
+
+      }catch(e){
+        qs("lstatus").textContent = "軽量取得に失敗…元記事で見てな";
+        qs("lbody").textContent =
+          "取得に失敗したわ（通信制限・相手サイトのブロック等）。\n\n" +
+          "上の「元記事を開く」で読んでな。\n\n" +
+          "エラー: " + (e && e.message ? e.message : String(e));
+      }finally{
+        clearTimeout(timer);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
