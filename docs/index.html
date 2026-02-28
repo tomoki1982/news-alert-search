@@ -1,28 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>News Finder</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
 <body>
-  <div class="header">
-    <h1>ニュース検索</h1>
-    <div class="rule">ルール：スペース=AND / |=OR（例：中国 輸出|規制）</div>
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-title">News Finder</div>
+        <div class="brand-sub">直近3か月 + 過去を段階拡張（最大5年）</div>
+      </div>
+
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme" title="テーマ切替">
+        🌙
+      </button>
+    </div>
 
     <div class="controls">
-      <input id="queryInput" type="text" placeholder="キーワード（例：中国 輸出規制）" />
-      <select id="sourceSelect"></select>
-      <select id="categorySelect"></select>
-      <select id="rangeSelect"></select>
-      <button class="btn" id="refreshBtn">更新</button>
+      <input id="q" type="text" placeholder="キーワード（タイトル/ソース/カテゴリ/URL）" autocomplete="off" />
+
+      <select id="sourceFilter">
+        <option value="">ソース：すべて</option>
+      </select>
+
+      <select id="categoryFilter">
+        <option value="">カテゴリ：すべて</option>
+      </select>
+
+      <button id="searchBtn" class="btn" type="button">検索</button>
+      <button id="resetBtn" class="btn" type="button">リセット</button>
     </div>
 
-    <div class="status-bar">
-      <div id="countLabel">総件数：0 / ヒット：0</div>
-      <div>
-        <span id="status">-</span>
-        <span id="fetchedAt"></span>
+    <div class="toolbar">
+      <div class="range">
+        <span class="label">検索範囲：</span>
+        <span id="rangeLabel" class="badge">直近3か月</span>
+        <button id="expandBtn" class="btn" type="button">過去も探す（直近1年）</button>
+      </div>
+
+      <div class="status">
+        <span id="statusText" class="muted">読み込み中…</span>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="main">
-    <div id="list"></div>
-  </div>
+  <main class="main">
+    <div id="summary" class="summary"></div>
+    <div id="list" class="list"></div>
+  </main>
 
   <script src="./app.js"></script>
 </body>
+</html>
