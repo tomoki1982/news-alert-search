@@ -9,17 +9,14 @@ const RANGE_OPTIONS = [
   { label: "全期間", days: null },
 ];
 
-const PREVIEW_MAX_CHARS = 280;
-
 function qs(id) { return document.getElementById(id); }
 
 function parseQuery(q) {
   // スペース=AND, | =OR
-  // 例: "中国 輸出|規制" => [["中国"],["輸出","規制"]]
   q = (q || "").trim();
   if (!q) return [];
   const andParts = q.split(/\s+/).filter(Boolean);
-  return andParts.map(part => part.split("|").map(x => x.trim()).filter(Boolean));
+  return andParts.map(part => part.split("|").filter(Boolean));
 }
 
 function textOf(item) {
@@ -40,14 +37,10 @@ function withinDays(item, days) {
 function match(item, groups) {
   if (!groups.length) return true;
   const txt = textOf(item);
-  // AND: 全グループがtrue
-  // OR: そのグループ内のどれかが含まれる
   return groups.every(orGroup => orGroup.some(word => txt.includes(word.toLowerCase())));
 }
 
-function uniq(arr) {
-  return Array.from(new Set(arr));
-}
+function uniq(arr) { return Array.from(new Set(arr)); }
 
 function initSelect(el, options, defaultValue) {
   el.innerHTML = "";
@@ -60,15 +53,11 @@ function initSelect(el, options, defaultValue) {
   el.value = defaultValue ?? options[0]?.value ?? "";
 }
 
-function formatDate(item) {
-  const d = (item.published || item.fetchedAt || "").slice(0, 10);
-  return d || "";
-}
-
-function buildPreviewText(summary) {
-  const s = (summary || "").trim();
+function clipSummary(s, maxLen = 160) {
+  s = (s || "").trim();
   if (!s) return "";
-  return s.length > PREVIEW_MAX_CHARS ? s.slice(0, PREVIEW_MAX_CHARS) + "…" : s;
+  if (s.length <= maxLen) return s;
+  return s.slice(0, maxLen) + "…";
 }
 
 function render() {
@@ -77,7 +66,6 @@ function render() {
 
   const source = qs("source").value;
   const category = qs("category").value;
-
   const rangeLabel = qs("range").value;
   const range = RANGE_OPTIONS.find(x => x.label === rangeLabel);
   const days = range ? range.days : 30;
@@ -99,57 +87,54 @@ function render() {
     const card = document.createElement("div");
     card.className = "card";
 
-    // header line
     const top = document.createElement("div");
     top.className = "small";
-    top.textContent = `${item.source || ""} / ${(item.category || "その他")} / ${formatDate(item)}`;
+    const d = (item.published || item.fetchedAt || "").slice(0, 10);
+    top.textContent = `${item.source || ""} / ${item.category || "その他"} / ${d}`;
     card.appendChild(top);
 
-    // title
     const title = document.createElement("div");
     title.className = "title";
     title.textContent = item.title || "(no title)";
     card.appendChild(title);
 
-    // actions row
     const actions = document.createElement("div");
     actions.className = "actions";
 
-    // open link
-    const a = document.createElement("a");
-    a.href = item.link;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.textContent = "開く";
-    actions.appendChild(a);
+    // プレビュー（summaryがある時だけ）
+    const hasSummary = (item.summary || "").trim().length > 0;
+    let previewEl = null;
 
-    // preview toggle (card内で開く)
-    const summaryText = buildPreviewText(item.summary || "");
-    if (summaryText) {
+    if (hasSummary) {
       const btn = document.createElement("button");
       btn.className = "btn";
       btn.type = "button";
       btn.textContent = "プレビュー";
+      actions.appendChild(btn);
 
-      const preview = document.createElement("div");
-      preview.className = "preview";
-      preview.style.display = "none";
-      preview.textContent = summaryText;
+      previewEl = document.createElement("div");
+      previewEl.className = "preview";
+      previewEl.style.display = "none";
+      previewEl.textContent = clipSummary(item.summary, 220);
+      card.appendChild(previewEl);
 
       btn.addEventListener("click", () => {
-        const isOpen = preview.style.display !== "none";
-        preview.style.display = isOpen ? "none" : "block";
-        btn.textContent = isOpen ? "プレビュー" : "閉じる";
+        const open = previewEl.style.display !== "none";
+        previewEl.style.display = open ? "none" : "block";
+        btn.textContent = open ? "プレビュー" : "閉じる";
       });
-
-      actions.appendChild(btn);
-      card.appendChild(actions);
-      card.appendChild(preview);
     } else {
-      // summaryが無い場合でもUIが崩れないように
-      card.appendChild(actions);
+      // summaryが無い場合はボタン自体を出さない（UIをスッキリ）
     }
 
+    const a = document.createElement("a");
+    a.href = item.link;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "記事を開く";
+    actions.appendChild(a);
+
+    card.appendChild(actions);
     list.appendChild(card);
   }
 }
@@ -158,30 +143,20 @@ async function main() {
   const res = await fetch("./news.json", { cache: "no-store" });
   NEWS = await res.json();
 
-  // ソース一覧
   const sources = uniq(NEWS.map(x => x.source).filter(Boolean)).sort();
-  initSelect(
-    qs("source"),
+  initSelect(qs("source"),
     [{ label: "全ソース", value: "全ソース" }].concat(sources.map(s => ({ label: s, value: s }))),
     "全ソース"
   );
 
-  // カテゴリ一覧（3分類 + 全カテゴリ）
   const categories = ["規制・輸出", "物価", "その他"];
-  initSelect(
-    qs("category"),
+  initSelect(qs("category"),
     [{ label: "全カテゴリ", value: "全カテゴリ" }].concat(categories.map(c => ({ label: c, value: c }))),
     "全カテゴリ"
   );
 
-  // 期間
-  initSelect(
-    qs("range"),
-    RANGE_OPTIONS.map(x => ({ label: x.label, value: x.label })),
-    "直近30日"
-  );
+  initSelect(qs("range"), RANGE_OPTIONS.map(x => ({ label: x.label, value: x.label })), "直近30日");
 
-  // イベント
   qs("q").addEventListener("input", render);
   qs("source").addEventListener("change", render);
   qs("category").addEventListener("change", render);
