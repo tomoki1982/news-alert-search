@@ -1,350 +1,395 @@
-// docs/app.js
-// ニュース検索（RSS複数ソース）
-// ルール: スペース=AND, | =OR
-// 例: "中国 輸出|規制" -> (中国 AND 輸出) OR 規制
+/* =========
+   Repo config (IMPORTANT)
+   =========
+   archive は GitHub Pages では配信されないので、
+   raw.githubusercontent.com から取得する。
 
-let NEWS = [];
-let LAST_FETCHED_AT = null;
+   ここを自分のリポジトリに合わせて変更してな：
+*/
+const REPO_OWNER = "YOUR_GITHUB_OWNER";
+const REPO_NAME  = "YOUR_REPO_NAME";
+const REPO_BRANCH = "main"; // or "master"
 
-const RANGE_OPTIONS = [
-  { label: "直近7日", days: 7 },
-  { label: "直近30日", days: 30 },
-  { label: "直近180日", days: 180 },
-  { label: "直近1年", days: 365 },
-  { label: "全期間", days: null },
-];
+/* =========
+   App state
+   ========= */
+const state = {
+  index: null,
+  latest: [],
+  loadedMonths: new Set(), // "YYYY-MM"
+  loadedYears: 0,          // 0 = latest only, then 1..5
+  allItems: [],            // latest + loaded archive months
+  filtered: [],
+};
 
-// ここにRSSを増やしていく
-const SOURCES = [
-  // 例：JETRO（※実URLはあなたの環境に合わせて増減OK）
-  { name: "JETRO", url: "https://www.jetro.go.jp/rss/news.xml" },
-  // 他も足すならここに追加
-  // { name: "NHK", url: "https://www3.nhk.or.jp/rss/news/cat0.xml" },
-];
+function qs(id){ return document.getElementById(id); }
 
-function qs(id) { return document.getElementById(id); }
+function setStatus(msg){ qs("statusText").textContent = msg; }
 
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
 }
 
-// HTML属性用（onclickに埋めるので最低限）
-function escapeAttr(s) {
-  return String(s ?? "")
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'");
+function parseNdjson(text){
+  const out = [];
+  const lines = text.split("\n");
+  for (const line of lines){
+    const t = line.trim();
+    if (!t) continue;
+    try { out.push(JSON.parse(t)); } catch {}
+  }
+  return out;
 }
 
-/**
- * 軽量表示URLに変換（スマホで重い記事対策）
- * r.jina.ai は「テキスト中心で表示」できるので体感が激速になることが多い
- */
-function toLiteUrl(url) {
-  const stripped = String(url ?? "").replace(/^https?:\/\//, "");
-  return `https://r.jina.ai/http://${stripped}`;
+function uniqByLink(items){
+  const best = new Map();
+  for (const it of items){
+    if (!it || !it.link) continue;
+    const prev = best.get(it.link);
+    if (!prev || (it.pubDate || "") > (prev.pubDate || "")){
+      best.set(it.link, it);
+    }
+  }
+  return Array.from(best.values()).sort((a,b)=> (b.pubDate||"").localeCompare(a.pubDate||""));
 }
 
-function openUrl(url) {
-  window.open(url, "_blank", "noopener,noreferrer");
+function normalizeText(s){ return (s || "").toLowerCase(); }
+
+function matchKeyword(item, q){
+  if (!q) return true;
+  const hay =
+    `${item.title||""} ${item.source||""} ${item.category||""} ${item.link||""}`.toLowerCase();
+  return hay.includes(q);
 }
 
-// --- クエリ処理（スペース=AND, | =OR） ---
-function parseQuery(q) {
-  const raw = (q || "").trim();
-  if (!raw) return [];
+function formatDate(iso){
+  if (!iso) return "";
+  // show YYYY-MM-DD HH:mm (JST)
+  try{
+    const d = new Date(iso);
+    const fmt = new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit"
+    });
+    return fmt.format(d);
+  }catch{
+    return iso;
+  }
+}
 
-  // ORで分割
-  const orParts = raw.split("|").map(s => s.trim()).filter(Boolean);
+/* =========
+   Theme toggle
+   ========= */
+(function(){
+  const key = "theme"; // "light" | "dark" | null
+  const btn = qs("themeToggle");
+  if (!btn) return;
 
-  // ORの各要素は AND条件（スペース区切り）
-  return orParts.map(part => {
-    const andTokens = part.split(/\s+/).map(s => s.trim()).filter(Boolean);
-    return andTokens;
+  const apply = (mode) => {
+    document.documentElement.dataset.theme = mode || "";
+    btn.textContent = (mode === "dark") ? "☀️" : "🌙";
+  };
+
+  const saved = localStorage.getItem(key);
+  if (saved === "light" || saved === "dark") apply(saved);
+  else apply(null);
+
+  btn.addEventListener("click", () => {
+    const cur = document.documentElement.dataset.theme;
+    const next = (cur === "dark") ? "light" : "dark";
+    localStorage.setItem(key, next);
+    apply(next);
   });
-}
+})();
 
-function matchQuery(item, queryGroups) {
-  if (!queryGroups || queryGroups.length === 0) return true;
-
-  const hay = `${item.title} ${item.description} ${item.category} ${item.source}`.toLowerCase();
-
-  // OR: どれかのグループが成立すればOK
-  return queryGroups.some(andTokens => {
-    // AND: 全部含む必要あり
-    return andTokens.every(t => hay.includes(String(t).toLowerCase()));
-  });
-}
-
-// --- 日付 ---
-function toDateSafe(s) {
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  return d;
-}
-
-function withinRange(itemDate, days) {
-  if (!days) return true;
-  const d = itemDate instanceof Date ? itemDate : toDateSafe(itemDate);
-  if (!d) return true;
-  const now = new Date();
-  const ms = days * 24 * 60 * 60 * 1000;
-  return (now - d) <= ms;
-}
-
-// --- RSS取得（CORS回避） ---
-async function fetchText(url) {
-  // allorigins の raw を使う（CORS回避用）
-  // ※アクセスできない環境なら、ここをあなたのプロキシに差し替え
-  const proxied = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  const res = await fetch(proxied, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+/* =========
+   Data fetching
+   ========= */
+async function fetchText(url){
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return await res.text();
 }
 
-function parseRss(xmlText, sourceName) {
-  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
-  const items = Array.from(doc.querySelectorAll("item"));
+async function fetchJson(url){
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return await res.json();
+}
 
-  return items.map((it) => {
-    const title = it.querySelector("title")?.textContent?.trim() || "(no title)";
-    const link = it.querySelector("link")?.textContent?.trim() || "";
-    const pubDateRaw =
-      it.querySelector("pubDate")?.textContent?.trim() ||
-      it.querySelector("dc\\:date")?.textContent?.trim() ||
-      "";
+function rawArchiveUrl(monthKey){
+  const yyyy = monthKey.slice(0,4);
+  return `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}/archive/${yyyy}/${monthKey}.ndjson.gz`;
+}
 
-    const category =
-      it.querySelector("category")?.textContent?.trim() ||
-      "その他";
+async function fetchGzipNdjson(monthKey){
+  // Use DecompressionStream('gzip') (Chrome/Edge/Android modern OK)
+  const url = rawArchiveUrl(monthKey);
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`archive fetch failed: ${monthKey} (${res.status})`);
 
-    // RSSのdescriptionは短いことが多い
-    const description =
-      it.querySelector("description")?.textContent?.trim() ||
-      "";
+  if (!("DecompressionStream" in window)) {
+    throw new Error("このブラウザはgzip解凍（DecompressionStream）に対応してへん");
+  }
 
-    const pubDate = toDateSafe(pubDateRaw);
+  const ds = new DecompressionStream("gzip");
+  const decompressed = res.body.pipeThrough(ds);
+  const text = await new Response(decompressed).text();
+  return parseNdjson(text);
+}
 
-    return {
-      id: `${sourceName}::${link || title}::${pubDate ? pubDate.toISOString() : pubDateRaw}`,
-      source: sourceName,
-      title,
-      link,
-      category,
-      pubDate,
-      pubDateRaw,
-      description,
-    };
+/* =========
+   Index / latest load
+   ========= */
+async function loadIndexAndLatest(){
+  setStatus("index.json / latest.ndjson 読み込み中…");
+  const [index, latestText] = await Promise.all([
+    fetchJson("./data/index.json"),
+    fetchText("./data/latest.ndjson"),
+  ]);
+
+  state.index = index;
+  state.latest = parseNdjson(latestText);
+  state.allItems = uniqByLink(state.latest);
+  state.loadedMonths.clear();
+  state.loadedYears = 0;
+
+  populateFilters(state.allItems);
+  render(state.allItems, "直近3か月");
+  setStatus(`準備OK（最新 ${state.latest.length} 件）`);
+}
+
+function populateFilters(items){
+  const srcSel = qs("sourceFilter");
+  const catSel = qs("categoryFilter");
+
+  const sources = new Set();
+  const cats = new Set();
+  for (const it of items){
+    if (it.source) sources.add(it.source);
+    if (it.category) cats.add(it.category);
+  }
+
+  // reset options (keep first)
+  srcSel.innerHTML = `<option value="">ソース：すべて</option>`;
+  catSel.innerHTML = `<option value="">カテゴリ：すべて</option>`;
+
+  Array.from(sources).sort().forEach(s=>{
+    const o = document.createElement("option");
+    o.value = s; o.textContent = s;
+    srcSel.appendChild(o);
+  });
+
+  Array.from(cats).sort().forEach(c=>{
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c;
+    catSel.appendChild(o);
   });
 }
 
-async function fetchAllNews() {
-  qs("status").textContent = "取得中…";
-  const all = [];
-  for (const s of SOURCES) {
-    try {
-      const xml = await fetchText(s.url);
-      const parsed = parseRss(xml, s.name);
-      all.push(...parsed);
-    } catch (e) {
-      console.warn("RSS fetch error:", s.name, e);
+/* =========
+   Range expansion logic
+   ========= */
+function monthsForLastNYears(n){
+  // compute months from index.months that are within last n years from now (JST)
+  const months = state.index?.months || [];
+  if (!months.length) return [];
+
+  const now = new Date();
+  const nowJST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+  const cutoff = new Date(nowJST);
+  cutoff.setFullYear(cutoff.getFullYear() - n);
+
+  // cutoffMonthKey = YYYY-MM in JST
+  const cy = cutoff.getFullYear();
+  const cm = cutoff.getMonth() + 1;
+  const cutoffKey = `${cy}-${String(cm).padStart(2,"0")}`;
+
+  // months sorted asc; take those >= cutoffKey
+  return months.filter(m => m >= cutoffKey);
+}
+
+async function expandToYears(n){
+  if (!state.index) return;
+  if (n <= state.loadedYears) return;
+
+  const needMonths = monthsForLastNYears(n);
+  // exclude those already loaded OR included in latest (we treat latest as already in allItems)
+  const toLoad = needMonths.filter(m => !state.loadedMonths.has(m));
+
+  if (!toLoad.length){
+    state.loadedYears = n;
+    return;
+  }
+
+  setStatus(`過去ロード中…（直近${n}年 / ${toLoad.length}ヶ月分）`);
+
+  const newly = [];
+  // load sequentially to avoid spiky memory/network
+  for (let i=0; i<toLoad.length; i++){
+    const mk = toLoad[i];
+    try{
+      const arr = await fetchGzipNdjson(mk);
+      newly.push(...arr);
+      state.loadedMonths.add(mk);
+      setStatus(`過去ロード中…（直近${n}年：${i+1}/${toLoad.length}ヶ月）`);
+    }catch(e){
+      // continue, but show warning in status
+      setStatus(`注意：${mk} の読み込み失敗（継続中）`);
+      // small delay so user can see it
+      await new Promise(r=>setTimeout(r, 250));
     }
   }
 
-  // 重複除去（link優先）
-  const map = new Map();
-  for (const it of all) {
-    const key = it.link || it.id;
-    if (!map.has(key)) map.set(key, it);
-  }
+  state.loadedYears = n;
+  state.allItems = uniqByLink([...state.allItems, ...newly]);
 
-  NEWS = Array.from(map.values())
-    .sort((a, b) => {
-      const ad = a.pubDate ? a.pubDate.getTime() : 0;
-      const bd = b.pubDate ? b.pubDate.getTime() : 0;
-      return bd - ad;
-    });
-
-  LAST_FETCHED_AT = new Date();
-  qs("status").textContent = "OK";
+  populateFilters(state.allItems);
 }
 
-// --- UI構築 ---
-function buildSelectOptions(selectEl, values, allLabel) {
-  const current = selectEl.value;
-  selectEl.innerHTML = "";
+/* =========
+   Search / render
+   ========= */
+function applyFilters(){
+  const q = normalizeText(qs("q").value.trim());
+  const src = qs("sourceFilter").value;
+  const cat = qs("categoryFilter").value;
 
-  const optAll = document.createElement("option");
-  optAll.value = "";
-  optAll.textContent = allLabel;
-  selectEl.appendChild(optAll);
+  let items = state.allItems;
 
-  values.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v;
-    opt.textContent = v;
-    selectEl.appendChild(opt);
-  });
+  if (src) items = items.filter(it => it.source === src);
+  if (cat) items = items.filter(it => it.category === cat);
+  if (q) items = items.filter(it => matchKeyword(it, q));
 
-  // 可能なら元の選択を復元
-  selectEl.value = values.includes(current) ? current : "";
+  return items;
 }
 
-function initControls() {
-  // ソース
-  const sourceSel = qs("sourceSelect");
-  buildSelectOptions(sourceSel, SOURCES.map(s => s.name), "全ソース");
-
-  // カテゴリ（初期は空。取得後に動的生成）
-  const catSel = qs("categorySelect");
-  buildSelectOptions(catSel, [], "全カテゴリ");
-
-  // 期間
-  const rangeSel = qs("rangeSelect");
-  rangeSel.innerHTML = "";
-  for (const r of RANGE_OPTIONS) {
-    const opt = document.createElement("option");
-    opt.value = r.days === null ? "" : String(r.days);
-    opt.textContent = r.label;
-    rangeSel.appendChild(opt);
-  }
-  rangeSel.value = "30"; // 直近30日デフォ
-
-  // イベント
-  qs("queryInput").addEventListener("input", render);
-  sourceSel.addEventListener("change", render);
-  catSel.addEventListener("change", render);
-  rangeSel.addEventListener("change", render);
-
-  qs("refreshBtn").addEventListener("click", async () => {
-    await boot();
-  });
+function rangeLabel(){
+  if (state.loadedYears <= 0) return "直近3か月";
+  return `直近${state.loadedYears}年`;
 }
 
-function updateCategoryOptionsFromNews() {
-  const cats = new Set();
-  for (const it of NEWS) {
-    if (it.category) cats.add(it.category);
-  }
-  const values = Array.from(cats).sort((a, b) => a.localeCompare(b, "ja"));
-  buildSelectOptions(qs("categorySelect"), values, "全カテゴリ");
-}
-
-function formatDate(d, raw) {
-  if (d instanceof Date && !Number.isNaN(d.getTime())) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }
-  return raw ? String(raw).slice(0, 10) : "";
-}
-
-function render() {
-  const q = qs("queryInput").value;
-  const source = qs("sourceSelect").value;     // "" なら全ソース
-  const category = qs("categorySelect").value; // "" なら全カテゴリ
-  const daysStr = qs("rangeSelect").value;
-  const days = daysStr ? Number(daysStr) : null;
-
-  const queryGroups = parseQuery(q);
-
-  const filtered = NEWS.filter(it => {
-    if (source && it.source !== source) return false;
-    if (category && it.category !== category) return false;
-    if (days && !withinRange(it.pubDate ?? it.pubDateRaw, days)) return false;
-    if (!matchQuery(it, queryGroups)) return false;
-    return true;
-  });
-
-  qs("countLabel").textContent = `総件数：${NEWS.length} / ヒット：${filtered.length}`;
+function render(items, label){
+  qs("rangeLabel").textContent = label;
+  qs("summary").textContent = `表示 ${items.length} 件（全読み込み ${state.allItems.length} 件）`;
 
   const list = qs("list");
   list.innerHTML = "";
 
-  for (const it of filtered) {
+  for (const it of items){
     const card = document.createElement("div");
     card.className = "card";
 
-    const meta = `${escapeHtml(it.source)} / ${escapeHtml(it.category)} / ${escapeHtml(formatDate(it.pubDate, it.pubDateRaw))}`;
+    const title = escapeHtml(it.title || "");
+    const src = escapeHtml(it.source || "");
+    const cat = escapeHtml(it.category || "");
+    const date = escapeHtml(formatDate(it.pubDate || ""));
+    const link = it.link || "";
 
-    const previewText = it.description
-      ? escapeHtml(it.description).slice(0, 220)
-      : "（要約なし：このRSSは本文要約を配ってへんみたいやわ）";
+    const openUrl = link;
+    // lightweight open: use jina.ai proxy (fast text view)
+    const liteUrl = link.startsWith("https://")
+      ? `https://r.jina.ai/${link}`
+      : (link.startsWith("http://") ? `https://r.jina.ai/http://${link.slice(7)}` : link);
 
-    // ★ A：軽量で開く ボタンを追加済み
     card.innerHTML = `
-      <div class="meta">${meta}</div>
-      <div class="title">${escapeHtml(it.title)}</div>
-
-      <div class="actions">
-        <button class="btn" data-act="preview">プレビュー</button>
-        <button class="btn link" data-act="open">記事を開く</button>
-        <button class="btn btn-lite" data-act="open-lite">軽量で開く</button>
+      <div class="card-title">${title}</div>
+      <div class="meta">
+        <span class="badge">${src || "source"}</span>
+        ${cat ? `<span class="badge">${cat}</span>` : ""}
+        ${date ? `<span>${date}</span>` : ""}
+        <a href="${escapeHtml(openUrl)}" target="_blank" rel="noopener">記事を開く</a>
       </div>
-
-      <div class="preview" style="display:none;">
-        ${previewText}
-        <div class="actions" style="margin-top:10px;">
-          <button class="btn" data-act="close">閉じる</button>
-          <button class="btn link" data-act="open">記事を開く</button>
-          <button class="btn btn-lite" data-act="open-lite">軽量で開く</button>
-        </div>
+      <div class="actions">
+        <a class="btn btn-lite small" href="${escapeHtml(openUrl)}" target="_blank" rel="noopener">記事を開く</a>
+        <a class="btn small" href="${escapeHtml(liteUrl)}" target="_blank" rel="noopener">軽量で開く</a>
+        <button class="btn small" type="button" data-copy="${escapeHtml(openUrl)}">URLコピー</button>
       </div>
     `;
-
-    const preview = card.querySelector(".preview");
-
-    card.querySelector('[data-act="preview"]').addEventListener("click", () => {
-      preview.style.display = "block";
-    });
-
-    card.querySelector('[data-act="close"]').addEventListener("click", () => {
-      preview.style.display = "none";
-    });
-
-    card.querySelectorAll('[data-act="open"]').forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (!it.link) return;
-        openUrl(it.link);
-      });
-    });
-
-    card.querySelectorAll('[data-act="open-lite"]').forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (!it.link) return;
-        openUrl(toLiteUrl(it.link));
-      });
-    });
 
     list.appendChild(card);
   }
 
-  // 最終取得時刻
-  const ft = qs("fetchedAt");
-  if (LAST_FETCHED_AT) {
-    ft.textContent = `最終更新：${LAST_FETCHED_AT.toLocaleString("ja-JP")}`;
-  } else {
-    ft.textContent = "";
+  // copy handlers
+  list.querySelectorAll("button[data-copy]").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const url = btn.getAttribute("data-copy") || "";
+      try{
+        await navigator.clipboard.writeText(url);
+        setStatus("URLコピーしたで");
+      }catch{
+        setStatus("コピー失敗（ブラウザ制限の可能性）");
+      }
+    });
+  });
+}
+
+/* =========
+   UI events
+   ========= */
+function updateExpandButton(){
+  const btn = qs("expandBtn");
+  const next = Math.min((state.loadedYears || 0) + 1, 5);
+  if (state.loadedYears >= 5){
+    btn.disabled = true;
+    btn.textContent = "過去も探す（最大5年）";
+  }else{
+    btn.disabled = false;
+    btn.textContent = `過去も探す（直近${next}年）`;
   }
 }
 
-async function boot() {
-  try {
-    await fetchAllNews();
-    updateCategoryOptionsFromNews();
-    render();
-  } catch (e) {
-    console.error(e);
-    qs("status").textContent = "取得失敗";
-  }
+async function doSearch(){
+  const items = applyFilters();
+  render(items, rangeLabel());
+  updateExpandButton();
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  initControls();
-  await boot();
+async function onExpand(){
+  const next = Math.min((state.loadedYears || 0) + 1, 5);
+  await expandToYears(next);
+  await doSearch();
+  setStatus(`準備OK（${rangeLabel()}）`);
+}
+
+function resetUI(){
+  qs("q").value = "";
+  qs("sourceFilter").value = "";
+  qs("categoryFilter").value = "";
+}
+
+async function main(){
+  // Guard for repo settings
+  if (REPO_OWNER === "YOUR_GITHUB_OWNER" || REPO_NAME === "YOUR_REPO_NAME"){
+    setStatus("app.js の REPO_OWNER / REPO_NAME を自分の値に変更してな");
+  }
+
+  qs("searchBtn").addEventListener("click", doSearch);
+  qs("resetBtn").addEventListener("click", async ()=>{
+    resetUI();
+    await doSearch();
+  });
+
+  qs("q").addEventListener("keydown", (e)=>{
+    if (e.key === "Enter") doSearch();
+  });
+
+  qs("sourceFilter").addEventListener("change", doSearch);
+  qs("categoryFilter").addEventListener("change", doSearch);
+
+  qs("expandBtn").addEventListener("click", onExpand);
+
+  await loadIndexAndLatest();
+  updateExpandButton();
+}
+
+main().catch(e=>{
+  console.error(e);
+  setStatus(`エラー：${e.message || e}`);
 });
