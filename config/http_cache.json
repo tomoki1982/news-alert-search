@@ -1,33 +1,33 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"3fa5-64bca6ba398f5-gzip\"",
+    "etag": "\"3fa5-64bca6ba20843-gzip\"",
     "lastModified": "Fri, 27 Feb 2026 08:57:01 GMT",
-    "updatedAt": "2026-02-28T22:49:21+09:00"
+    "updatedAt": "2026-02-28T23:48:46+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
-    "etag": "\"5f5f1c025bd9a61579af4b9845c181b2\"",
-    "lastModified": "Sat, 28 Feb 2026 12:15:52 GMT",
-    "updatedAt": "2026-02-28T22:49:22+09:00"
+    "etag": "W/\"3ed94ef8b5d66ab73c8b9d4936c093aa\"",
+    "lastModified": "Sat, 28 Feb 2026 13:11:30 GMT",
+    "updatedAt": "2026-02-28T23:48:47+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
-    "etag": "W/\"3887661e9ab825778858ba7d5173c43d\"",
+    "etag": "\"3887661e9ab825778858ba7d5173c43d\"",
     "lastModified": "Sat, 28 Feb 2026 12:15:51 GMT",
-    "updatedAt": "2026-02-28T22:49:22+09:00"
+    "updatedAt": "2026-02-28T23:48:47+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
-    "etag": "W/\"b94591ea15fb67b79a3167ed45281fd9\"",
+    "etag": "\"b94591ea15fb67b79a3167ed45281fd9\"",
     "lastModified": "Sat, 28 Feb 2026 13:11:52 GMT",
-    "updatedAt": "2026-02-28T22:49:22+09:00"
+    "updatedAt": "2026-02-28T23:48:47+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
     "etag": "\"a2acac523c5dd9fc2e717504ab17b413\"",
     "lastModified": "Sat, 28 Feb 2026 12:11:55 GMT",
-    "updatedAt": "2026-02-28T22:49:22+09:00"
+    "updatedAt": "2026-02-28T23:48:47+09:00"
   },
   "https://www.tdb.co.jp/rss/jouhou.rdf": {
     "etag": "\"4e36-64bc2e76235fb\"",
     "lastModified": "Thu, 26 Feb 2026 23:58:57 GMT",
-    "updatedAt": "2026-02-28T22:49:22+09:00"
+    "updatedAt": "2026-02-28T23:48:46+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_status.xml": {
     "etag": "",
