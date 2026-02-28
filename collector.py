@@ -1,181 +1,204 @@
 # collector.py
-# RSSを収集してSQLiteに蓄積し、キーワードで検索できる最小構成
-# 0円運用：GitHub Actionsで毎日実行 → db/news.db を更新（コミット）
-#
-# 使い方（ローカルで試す場合）:
-#   python collector.py fetch
-#   python collector.py search 中国 輸出 規制
-#
-# Actionsでは "fetch" を実行する
-
 import sys
+import re
 import sqlite3
-import hashlib
-from datetime import datetime, timezone, timedelta
-
-try:
-    import feedparser
-except ImportError:
-    print("feedparser not installed. Run: pip install feedparser", file=sys.stderr)
-    raise
-
-JST = timezone(timedelta(hours=9))
-
-FEEDS = [
-    ("JETRO", "https://www.jetro.go.jp/rss/biznews.xml"),
-]
+import datetime
+from typing import Optional, Dict, Any, List
+import requests
+import feedparser
 
 DB_PATH = "db/news.db"
-MAX_PER_FEED = 20  # 1フィードあたり最大取得数（多すぎ防止）
 
+# いまはJETROだけ。増やすならここに追加するだけ
+FEEDS = [
+    {"source": "JETRO", "url": "https://www.jetro.go.jp/rss/biznews.xml"},
+    # {"source": "中小企業庁", "url": "https://www.chusho.meti.go.jp/rss/index.xml"},
+]
 
-def now_iso():
-    return datetime.now(JST).isoformat(timespec="seconds")
+# 取り込み件数（重いなら減らす）
+MAX_ITEMS_PER_FEED = 30
 
+# ---- 分類ロジック（3分類） ----
+# 規制・輸出
+KW_REG = [
+    r"輸出", r"輸入", r"輸出規制", r"輸入規制", r"規制", r"制裁", r"禁輸", r"管理",
+    r"安全保障", r"エンドユーザー", r"リスト", r"該非", r"外為法", r"キャッチオール",
+    r"関税", r"通商", r"WTO", r"FTA", r"EPA", r"輸出管理", r"輸入管理"
+]
 
-def to_iso(dt_struct) -> str:
-    if not dt_struct:
-        return now_iso()
-    # feedparserのtime.struct_time
-    dt = datetime(*dt_struct[:6], tzinfo=timezone.utc).astimezone(JST)
-    return dt.isoformat(timespec="seconds")
+# 物価
+KW_PRICE = [
+    r"物価", r"CPI", r"PPI", r"インフレ", r"デフレ", r"価格", r"値上げ", r"値下げ",
+    r"指数", r"コアCPI", r"消費者物価", r"企業物価", r"卸売物価"
+]
 
+def categorize(text: str) -> str:
+    t = (text or "").strip()
+    if not t:
+        return "その他"
 
-def make_id(source: str, url: str) -> str:
-    h = hashlib.sha256((source + "|" + url).encode("utf-8")).hexdigest()
-    return h[:24]
+    for pat in KW_REG:
+        if re.search(pat, t, flags=re.IGNORECASE):
+            return "規制・輸出"
 
+    for pat in KW_PRICE:
+        if re.search(pat, t, flags=re.IGNORECASE):
+            return "物価"
 
-def init_db(conn: sqlite3.Connection):
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS items (
-          id TEXT PRIMARY KEY,
-          source TEXT NOT NULL,
-          title TEXT NOT NULL,
-          url TEXT NOT NULL,
-          published TEXT,
-          summary TEXT,
-          fetched_at TEXT NOT NULL
-        )
-        """
+    return "その他"
+
+# ---- DB ----
+def connect_db() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    return conn
+
+def ensure_schema(conn: sqlite3.Connection) -> None:
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS news (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source TEXT NOT NULL,
+      title TEXT NOT NULL,
+      link TEXT NOT NULL UNIQUE,
+      published TEXT,
+      summary TEXT,
+      fetched_at TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'その他'
     )
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_items_published ON items(published)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_items_source ON items(source)")
+    """)
+    # 既存DBに category 列がない場合に追加
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(news)").fetchall()]
+    if "category" not in cols:
+        conn.execute("ALTER TABLE news ADD COLUMN category TEXT NOT NULL DEFAULT 'その他'")
     conn.commit()
 
-
-def upsert_item(conn, item):
+def upsert_item(conn: sqlite3.Connection, item: Dict[str, Any]) -> bool:
+    """
+    既にlinkがあれば更新、なければ追加
+    戻り値: True=追加/更新があった、False=変化なし
+    """
     cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT OR IGNORE INTO items
-        (id, source, title, url, published, summary, fetched_at)
+    cur.execute("SELECT title, published, summary, category FROM news WHERE link = ?", (item["link"],))
+    row = cur.fetchone()
+
+    if row is None:
+        cur.execute("""
+        INSERT INTO news (source, title, link, published, summary, fetched_at, category)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            item["id"],
-            item["source"],
-            item["title"],
-            item["url"],
-            item["published"],
-            item["summary"],
-            item["fetched_at"],
-        ),
-    )
-    return cur.rowcount  # 1なら追加、0なら既存
+        """, (
+            item["source"], item["title"], item["link"],
+            item.get("published"), item.get("summary"),
+            item["fetched_at"], item["category"]
+        ))
+        return True
 
+    # 既存がある場合は必要なら更新（タイトルや要約が変わることがある）
+    old_title, old_pub, old_sum, old_cat = row
+    changed = False
+    if (old_title or "") != (item["title"] or ""):
+        changed = True
+    if (old_pub or "") != (item.get("published") or ""):
+        changed = True
+    if (old_sum or "") != (item.get("summary") or ""):
+        changed = True
+    if (old_cat or "") != (item.get("category") or ""):
+        changed = True
 
-def fetch():
-    import os
+    if changed:
+        cur.execute("""
+        UPDATE news
+        SET source=?, title=?, published=?, summary=?, category=?
+        WHERE link=?
+        """, (
+            item["source"], item["title"],
+            item.get("published"), item.get("summary"),
+            item["category"], item["link"]
+        ))
+        return True
 
-    os.makedirs("db", exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    init_db(conn)
+    return False
 
-    added_total = 0
+# ---- RSS ----
+def parse_published(entry: Any) -> Optional[str]:
+    # feedparserのpublished_parsedを優先
+    if getattr(entry, "published_parsed", None):
+        dt = datetime.datetime(*entry.published_parsed[:6], tzinfo=datetime.timezone.utc)
+        return dt.isoformat()
+    pub = getattr(entry, "published", None) or getattr(entry, "updated", None)
+    return pub
 
-    for source, url in FEEDS:
-        d = feedparser.parse(url)
+def clean_text(s: Optional[str]) -> str:
+    if not s:
+        return ""
+    # 超ざっくりHTMLタグ除去（必要なら強化）
+    s = re.sub(r"<[^>]+>", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
 
-        entries = d.entries[:MAX_PER_FEED]
-        for e in entries:
-            title = (e.get("title") or "").strip()
-            link = (e.get("link") or "").strip()
-            if not link or not title:
+def fetch_feed(url: str) -> feedparser.FeedParserDict:
+    # タイムアウト短め（不安定対策）
+    r = requests.get(url, timeout=15, headers={"User-Agent": "news-alert-search-bot"})
+    r.raise_for_status()
+    return feedparser.parse(r.text)
+
+def run_fetch() -> None:
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    conn = connect_db()
+    try:
+        ensure_schema(conn)
+
+        total_new = 0
+        for f in FEEDS:
+            src = f["source"]
+            url = f["url"]
+            try:
+                d = fetch_feed(url)
+            except Exception as e:
+                print(f"[WARN] FETCH_FAIL {src} {url} {e}")
                 continue
 
-            _id = make_id(source, link)
-            published = to_iso(e.get("published_parsed") or e.get("updated_parsed"))
-            summary = (e.get("summary") or e.get("description") or "").strip()
+            entries = d.entries[:MAX_ITEMS_PER_FEED]
+            for e in entries:
+                title = clean_text(getattr(e, "title", "") or "")
+                link = getattr(e, "link", "") or ""
+                if not link:
+                    continue
 
-            item = {
-                "id": _id,
-                "source": source,
-                "title": title,
-                "url": link,
-                "published": published,
-                "summary": summary,
-                "fetched_at": now_iso(),
-            }
+                summary_raw = getattr(e, "summary", None) or getattr(e, "description", None)
+                summary = clean_text(summary_raw)
+                published = parse_published(e)
 
-            added = upsert_item(conn, item)
-            added_total += added
+                cat_text = f"{title} {summary}"
+                category = categorize(cat_text)
 
-    conn.commit()
-    conn.close()
-    print(f"fetch done: added={added_total} db={DB_PATH}")
+                item = {
+                    "source": src,
+                    "title": title,
+                    "link": link,
+                    "published": published,
+                    "summary": summary,
+                    "fetched_at": now,
+                    "category": category,
+                }
 
+                if upsert_item(conn, item):
+                    total_new += 1
 
-def search(keywords):
-    conn = sqlite3.connect(DB_PATH)
-    init_db(conn)
+            conn.commit()
+            print(f"[OK] {src} items={len(entries)} total_changed={total_new}")
 
-    # AND検索（全部含む）
-    terms = [k.strip() for k in keywords if k.strip()]
-    if not terms:
-        print("No keywords.")
-        return
+        print(f"[DONE] total_changed={total_new}")
 
-    where = " AND ".join(["(title LIKE ? OR summary LIKE ?)"] * len(terms))
-    params = []
-    for t in terms:
-        like = f"%{t}%"
-        params += [like, like]
-
-    sql = f"""
-      SELECT published, source, title, url
-      FROM items
-      WHERE {where}
-      ORDER BY published DESC
-      LIMIT 100
-    """
-
-    cur = conn.cursor()
-    rows = cur.execute(sql, params).fetchall()
-    conn.close()
-
-    for i, (published, source, title, url) in enumerate(rows, 1):
-        print(f"{i}. [{source}] {published[:10]} {title}\n   {url}\n")
-
-    print(f"hits={len(rows)}")
-
+    finally:
+        conn.close()
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python collector.py fetch|search <keywords...>")
-        sys.exit(1)
-
-    cmd = sys.argv[1]
+    cmd = (sys.argv[1:] or ["fetch"])[0]
     if cmd == "fetch":
-        fetch()
-    elif cmd == "search":
-        search(sys.argv[2:])
+        run_fetch()
     else:
-        print("Unknown command.")
-        sys.exit(1)
-
+        raise SystemExit("Usage: python collector.py fetch")
 
 if __name__ == "__main__":
     main()
