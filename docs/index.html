@@ -2,55 +2,48 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>News Finder</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header class="header">
-    <div class="header-top">
-      <div class="brand">
-        <div class="brand-title">News Finder</div>
-        <div class="brand-sub">直近3か月 + 過去を段階拡張（最大5年）</div>
+  <div class="top">
+    <div class="titleRow">
+      <div>
+        <h1>News Finder</h1>
+        <div class="sub">直近3か月 + 過去を段階拡張（最大5年）</div>
       </div>
-
-      <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle theme" title="テーマ切替">
-        🌙
-      </button>
+      <button id="themeToggle" class="iconBtn" type="button" aria-label="toggle theme">🌙</button>
     </div>
 
     <div class="controls">
-      <input id="q" type="text" placeholder="キーワード（タイトル/ソース/カテゴリ/URL）" autocomplete="off" />
+      <input id="q" type="text" placeholder="キーワード（タイトル/ソース/カテゴリ/URL）" />
+      <div class="row2">
+        <select id="sourceFilter"></select>
+        <select id="categoryFilter"></select>
+      </div>
+      <div class="row3">
+        <button id="searchBtn" class="btn primary" type="button">検索</button>
+        <button id="resetBtn" class="btn" type="button">リセット</button>
+      </div>
 
-      <select id="sourceFilter">
-        <option value="">ソース：すべて</option>
-      </select>
-
-      <select id="categoryFilter">
-        <option value="">カテゴリ：すべて</option>
-      </select>
-
-      <button id="searchBtn" class="btn" type="button">検索</button>
-      <button id="resetBtn" class="btn" type="button">リセット</button>
-    </div>
-
-    <div class="toolbar">
-      <div class="range">
-        <span class="label">検索範囲：</span>
-        <span id="rangeLabel" class="badge">直近3か月</span>
-        <button id="expandBtn" class="btn" type="button">過去も探す（直近1年）</button>
+      <div class="scopeRow">
+        <div class="scopeLabel">検索範囲：</div>
+        <div class="chips">
+          <button id="scopeLatestBtn" class="chip active" type="button">直近3か月</button>
+          <button id="scopePastBtn" class="chip" type="button">過去も探す（直近1年）</button>
+        </div>
       </div>
 
       <div class="status">
-        <span id="statusText" class="muted">読み込み中…</span>
+        <span id="statusText">準備中…</span>
       </div>
-    </div>
-  </header>
 
-  <main class="main">
-    <div id="summary" class="summary"></div>
-    <div id="list" class="list"></div>
-  </main>
+      <div class="summary" id="summary"></div>
+    </div>
+  </div>
+
+  <div id="list" class="list"></div>
 
   <script src="./app.js"></script>
 </body>
