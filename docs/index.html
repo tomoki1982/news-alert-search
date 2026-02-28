@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>News Finder</title>
-  <link rel="stylesheet" href="./style.css?v=3" />
+  <link rel="stylesheet" href="./style.css?v=4" />
 </head>
 <body>
   <div class="wrap">
@@ -13,14 +13,20 @@
         <div>
           <h1 class="h1">News Finder</h1>
           <div class="sub">
-            ルール：スペース=AND、|=OR（例： 中国 輸出規制 | 半導体 ）
+            ルール：スペース（全角/半角）=AND、ORボタン または「|」「｜」=OR（例： 中国 輸出規制 OR 半導体 ）
           </div>
         </div>
         <button id="themeToggle" class="iconBtn" type="button" aria-label="toggle theme">🌙</button>
       </div>
 
       <div class="panel">
-        <input id="q" class="input" type="text" placeholder="キーワード（タイトル/ソース/カテゴリ/URL）" />
+        <div class="qRow">
+          <input id="q" class="input" type="text" placeholder="キーワード（タイトル/ソース/カテゴリ/URL）" />
+          <div class="qBtns">
+            <button id="btnAnd" class="btn small" type="button" title="ANDを追加（スペース）">AND</button>
+            <button id="btnOr" class="btn small" type="button" title="ORを追加（ | ）">OR</button>
+          </div>
+        </div>
 
         <div class="row">
           <select id="sourceFilter" class="select">
@@ -58,6 +64,6 @@
     </main>
   </div>
 
-  <script src="./app.js?v=3"></script>
+  <script src="./app.js?v=4"></script>
 </body>
 </html>
