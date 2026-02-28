@@ -1,11 +1,10 @@
 /* docs/app.js
    News Finder (GitHub Pages)
-   Fix:
-   - Robust DOM binding (works even if ids differ)
-   - Always create status/count/results containers if missing
+   - Robust control detection (selects are detected by option text like "ソース", "カテゴリ", "検索範囲")
    - Linked filters (improvement #1)
-   - URLまとめてコピー
-   - RSS追加メモ（localStorage）
+   - URLまとめてコピー（フィルタ後の結果）
+   - RSS追加メモ（localStorageに保存、sources.json用にまとめコピー）
+   - 表示件数はデフォルト30（変更できる「表示件数」セレクト追加）
 */
 
 const PATHS = {
@@ -30,9 +29,10 @@ let STATE = {
   currentPool: [],
   lastFiltered: [],
   theme: "light",
+  showLimit: 30,
 };
 
-/* ---------- tiny utils ---------- */
+/* ---------- utils ---------- */
 const safeText = (v) => (v ?? "").toString();
 const uniq = (arr) => Array.from(new Set(arr));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -44,15 +44,6 @@ function parseISO(s) {
     return new Date(0);
   }
 }
-
-function monthKeyFromISO(pubDateIso) {
-  const d = parseISO(pubDateIso);
-  if (Number.isNaN(d.getTime())) return null;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
-}
-
 function formatLocal(pubDateIso) {
   const d = parseISO(pubDateIso);
   if (Number.isNaN(d.getTime())) return "";
@@ -63,7 +54,6 @@ function formatLocal(pubDateIso) {
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${y}/${m}/${day} ${hh}:${mm}`;
 }
-
 function escapeHtml(s) {
   return safeText(s)
     .replace(/&/g, "&amp;")
@@ -73,7 +63,12 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
-/* ---------- robust DOM finders / creators ---------- */
+function qs(sel, root = document) {
+  return root.querySelector(sel);
+}
+function qsa(sel, root = document) {
+  return Array.from(root.querySelectorAll(sel));
+}
 function qsAny(selectors, root = document) {
   for (const sel of selectors) {
     const el = root.querySelector(sel);
@@ -82,103 +77,53 @@ function qsAny(selectors, root = document) {
   return null;
 }
 
-function qsa(sel, root = document) {
-  return Array.from(root.querySelectorAll(sel));
-}
-
+/* ---------- UI containers ---------- */
 function ensureContainers() {
-  // We try to locate an existing "panel" area near controls.
-  const panel =
-    qsAny(
-      [
-        "#panel",
-        ".panel",
-        ".controls",
-        ".control-panel",
-        "[data-role='panel']",
-        "main .card",
-        "main",
-        "body",
-      ],
-      document
-    ) || document.body;
+  const main = qsAny(["main", "#main", ".main"], document) || document.body;
 
-  // Status line
-  let status =
-    qsAny(
-      [
-        "#status",
-        "#statusLine",
-        "#statusText",
-        ".status",
-        ".status-line",
-        "[data-role='status']",
-      ],
-      document
-    );
-
+  // status
+  let status = qsAny(
+    ["#status", ".status", ".status-line", "[data-role='status']"],
+    document
+  );
   if (!status) {
     status = document.createElement("div");
     status.id = "status";
     status.className = "status-line";
-    status.style.marginTop = "8px";
-    panel.appendChild(status);
+    status.style.margin = "8px 0";
+    main.prepend(status);
   }
 
-  // Count line
-  let count =
-    qsAny(
-      [
-        "#count",
-        "#countLine",
-        "#countText",
-        ".count",
-        ".count-line",
-        "[data-role='count']",
-      ],
-      document
-    );
-
+  // count
+  let count = qsAny(
+    ["#count", ".count", ".count-line", "[data-role='count']"],
+    document
+  );
   if (!count) {
     count = document.createElement("div");
     count.id = "count";
     count.className = "count-line";
     count.style.margin = "10px 0";
-    const main = qsAny(["main", "#main", ".main"], document) || document.body;
-    // put it under panel if possible, else in main
-    (panel.parentElement ? panel.parentElement : main).appendChild(count);
+    main.appendChild(count);
   }
 
-  // Results container
-  let results =
-    qsAny(
-      [
-        "#results",
-        "#resultList",
-        "#list",
-        ".results",
-        ".result-list",
-        "[data-role='results']",
-      ],
-      document
-    );
-
+  // results
+  let results = qsAny(
+    ["#results", ".results", "#resultList", ".result-list", "[data-role='results']"],
+    document
+  );
   if (!results) {
     results = document.createElement("div");
     results.id = "results";
     results.className = "results";
-    const main = qsAny(["main", "#main", ".main"], document) || document.body;
     main.appendChild(results);
   }
 
-  // Toast (optional)
-  let toast =
-    qsAny(["#toast", ".toast", "[data-role='toast']"], document);
+  // toast
+  let toast = qsAny(["#toast", ".toast", "[data-role='toast']"], document);
   if (!toast) {
     toast = document.createElement("div");
     toast.id = "toast";
-    toast.className = "toast";
-    // minimal inline style if your css doesn't define
     toast.style.position = "fixed";
     toast.style.left = "50%";
     toast.style.bottom = "18px";
@@ -195,21 +140,18 @@ function ensureContainers() {
     document.body.appendChild(toast);
   }
 
-  return { panel, status, count, results, toast };
+  return { status, count, results, toast, main };
 }
 
 let DOM = null;
-
 function setStatus(msg) {
   if (!DOM) DOM = ensureContainers();
   DOM.status.textContent = msg;
 }
-
 function setCount(msg) {
   if (!DOM) DOM = ensureContainers();
   DOM.count.textContent = msg;
 }
-
 function toast(msg) {
   if (!DOM) DOM = ensureContainers();
   DOM.toast.textContent = msg;
@@ -217,19 +159,17 @@ function toast(msg) {
   setTimeout(() => (DOM.toast.style.opacity = "0"), 1400);
 }
 
-/* ---------- network ---------- */
+/* ---------- fetch ---------- */
 async function fetchText(url) {
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`fetch failed: ${r.status} ${url}`);
   return await r.text();
 }
-
 async function fetchJson(url) {
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`fetch failed: ${r.status} ${url}`);
   return await r.json();
 }
-
 function parseNDJSON(text) {
   const out = [];
   const lines = safeText(text).split("\n");
@@ -238,18 +178,14 @@ function parseNDJSON(text) {
     if (!s) continue;
     try {
       out.push(JSON.parse(s));
-    } catch {
-      // skip
-    }
+    } catch {}
   }
   return out;
 }
-
 async function fetchGzNdjson(url) {
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) throw new Error(`fetch failed: ${r.status} ${url}`);
   const buf = await r.arrayBuffer();
-
   if (!("DecompressionStream" in window)) {
     throw new Error("DecompressionStream not supported");
   }
@@ -283,14 +219,13 @@ function dedupeByLink(items) {
 /* ---------- AND/OR query ---------- */
 function normalizeQuery(raw) {
   let s = safeText(raw).trim();
-  s = s.replace(/\u3000/g, " "); // full-width space -> half
-  s = s.replace(/｜/g, "|");
+  s = s.replace(/\u3000/g, " "); // 全角スペース -> 半角
+  s = s.replace(/｜/g, "|");      // 全角パイプ -> 半角
   s = s.replace(/\s+OR\s+/gi, " | ");
   s = s.replace(/\s*\|\s*/g, " | ");
   s = s.replace(/\s+/g, " ").trim();
   return s;
 }
-
 function parseQueryToGroups(raw) {
   const q = normalizeQuery(raw);
   if (!q) return [];
@@ -299,20 +234,84 @@ function parseQueryToGroups(raw) {
     .map((p) => p.split(" ").map((t) => t.trim()).filter(Boolean))
     .filter((g) => g.length);
 }
-
 function matchItemByGroups(item, groups) {
   if (!groups || !groups.length) return true;
   const hay = [item.title, item.source, item.category, item.link]
     .map(safeText)
     .join(" ")
     .toLowerCase();
-
   return groups.some((andTerms) =>
     andTerms.every((t) => hay.includes(t.toLowerCase()))
   );
 }
 
-/* ---------- linked filters (improvement #1) ---------- */
+/* ---------- control detection (超重要) ---------- */
+function detectSelects() {
+  const selects = qsa("select");
+
+  const pick = (keyword) => {
+    // 1) option text に keyword を含む select を探す
+    for (const s of selects) {
+      const txt = safeText(s.options?.[0]?.textContent || "");
+      const allTxt = Array.from(s.options || [])
+        .slice(0, 3)
+        .map((o) => safeText(o.textContent))
+        .join(" ");
+      if (txt.includes(keyword) || allTxt.includes(keyword)) return s;
+    }
+    // 2) placeholder的に近いlabelを探す（selectの親要素内のテキスト）
+    for (const s of selects) {
+      const parentText = safeText(s.parentElement?.textContent || "");
+      if (parentText.includes(keyword)) return s;
+    }
+    return null;
+  };
+
+  return {
+    srcEl: pick("ソース"),
+    catEl: pick("カテゴリ"),
+    rangeEl: pick("検索範囲"),
+  };
+}
+
+function detectInputsAndButtons() {
+  const qEl =
+    qsAny(["#q", "#query", "input[type='text']"], document);
+
+  // ボタンは data-act があれば優先、なければ文言で拾う
+  const buttons = qsa("button");
+
+  const pickBtnByActOrText = (act, text) => {
+    const byAct = qs(`[data-act='${act}']`);
+    if (byAct) return byAct;
+    for (const b of buttons) {
+      const t = safeText(b.textContent).trim();
+      if (t === text) return b;
+    }
+    return null;
+  };
+
+  const searchBtn = pickBtnByActOrText("search", "検索");
+  const resetBtn = pickBtnByActOrText("reset", "リセット");
+  const copyUrlsBtn = pickBtnByActOrText("copy-urls", "URLまとめてコピー");
+
+  const andBtn = pickBtnByActOrText("and", "AND");
+  const orBtn = pickBtnByActOrText("or", "OR");
+
+  // ダークモードは月アイコンボタン(既存)を拾う
+  const themeBtn =
+    qsAny(["#themeToggle", "#toggleTheme", "[data-act='theme']", ".theme-toggle"], document);
+
+  return { qEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn };
+}
+
+function getControls() {
+  const { srcEl, catEl, rangeEl } = detectSelects();
+  const { qEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn } = detectInputsAndButtons();
+  return { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn };
+}
+
+/* ---------- linked filters (改善案①) ---------- */
 function computeLinkedOptions(pool, selectedSource, selectedCategory) {
   const sources = new Set();
   const categories = new Set();
@@ -321,14 +320,14 @@ function computeLinkedOptions(pool, selectedSource, selectedCategory) {
     const s = safeText(it.source).trim();
     const c = safeText(it.category).trim();
 
-    // sources filtered only by category
+    // source options depend on category only
     if (!selectedCategory || selectedCategory === "__all__") {
       if (s) sources.add(s);
     } else {
       if (c === selectedCategory && s) sources.add(s);
     }
 
-    // categories filtered only by source
+    // category options depend on source only
     if (!selectedSource || selectedSource === "__all__") {
       if (c) categories.add(c);
     } else {
@@ -346,13 +345,11 @@ function setSelectOptions(selectEl, options, allLabel) {
   if (!selectEl) return;
   const current = selectEl.value;
   const allValue = "__all__";
-  const html = [
-    `<option value="${allValue}">${escapeHtml(allLabel)}</option>`,
-    ...options.map(
-      (o) => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`
-    ),
-  ].join("");
-  selectEl.innerHTML = html;
+
+  selectEl.innerHTML =
+    [`<option value="${allValue}">${escapeHtml(allLabel)}</option>`]
+      .concat(options.map((o) => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`))
+      .join("");
 
   if (current && (current === allValue || options.includes(current))) {
     selectEl.value = current;
@@ -372,7 +369,6 @@ function getRangeMonths(rangeValue) {
   }
   return 3;
 }
-
 function rangeLabel(v) {
   if (v === "3m") return "直近3か月（標準）";
   if (v === "1y") return "直近1年";
@@ -387,7 +383,6 @@ function rangeLabel(v) {
 function openUrl(url) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
-
 async function copyToClipboard(text) {
   const t = safeText(text);
   if (!t) return;
@@ -405,12 +400,44 @@ async function copyToClipboard(text) {
   }
 }
 
+function ensureShowLimitSelect() {
+  // 既にあるなら何もしない
+  if (qs("#showLimit")) return;
+
+  const { rangeEl } = getControls();
+  if (!rangeEl || !rangeEl.parentElement) return;
+
+  const wrap = document.createElement("div");
+  wrap.style.display = "inline-block";
+  wrap.style.marginLeft = "8px";
+
+  wrap.innerHTML = `
+    <select id="showLimit" style="min-width: 160px;">
+      <option value="30">表示：30件</option>
+      <option value="50">表示：50件</option>
+      <option value="100">表示：100件</option>
+      <option value="999999">表示：すべて</option>
+    </select>
+  `.trim();
+
+  rangeEl.parentElement.appendChild(wrap);
+
+  const sel = qs("#showLimit");
+  sel.value = String(STATE.showLimit);
+  sel.addEventListener("change", () => {
+    const v = parseInt(sel.value, 10);
+    STATE.showLimit = Number.isFinite(v) ? v : 30;
+    applyFiltersAndRender();
+  });
+}
+
 function renderList(items) {
   if (!DOM) DOM = ensureContainers();
   const box = DOM.results;
 
-  const maxShow = 30;
-  const shown = items.slice(0, maxShow);
+  const limit = STATE.showLimit || 30;
+  const shown = items.slice(0, limit);
+
   setCount(`表示 ${shown.length} 件（全読み込み ${items.length} 件）`);
 
   if (shown.length === 0) {
@@ -418,7 +445,7 @@ function renderList(items) {
     return;
   }
 
-  const html = shown
+  box.innerHTML = shown
     .map((it) => {
       const title = escapeHtml(it.title || "");
       const source = escapeHtml(it.source || "");
@@ -443,8 +470,6 @@ function renderList(items) {
     })
     .join("");
 
-  box.innerHTML = html;
-
   qsa("[data-act='open']", box).forEach((b) => {
     b.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -457,7 +482,6 @@ function renderList(items) {
       await copyToClipboard(b.getAttribute("data-url"));
     });
   });
-
   qsa(".card", box).forEach((c) => {
     c.addEventListener("click", () => {
       const url = c.getAttribute("data-link");
@@ -466,42 +490,9 @@ function renderList(items) {
   });
 }
 
-function getControls() {
-  const qEl =
-    qsAny(["#q", "#query", "input[type='text']"], document);
-
-  const srcEl =
-    qsAny(["#source", "#sourceSel", "select[name='source']"], document);
-
-  const catEl =
-    qsAny(["#category", "#categorySel", "select[name='category']"], document);
-
-  const rangeEl =
-    qsAny(["#range", "#rangeSel", "select[name='range']"], document);
-
-  const searchBtn =
-    qsAny(["#btnSearch", "[data-act='search']"], document);
-
-  const resetBtn =
-    qsAny(["#btnReset", "[data-act='reset']"], document);
-
-  const copyUrlsBtn =
-    qsAny(["#btnCopyUrls", "[data-act='copy-urls']"], document);
-
-  const andBtn =
-    qsAny(["#btnAnd", "[data-act='and']"], document);
-
-  const orBtn =
-    qsAny(["#btnOr", "[data-act='or']"], document);
-
-  const themeBtn =
-    qsAny(["#themeToggle", "#toggleTheme", "[data-act='theme']"], document);
-
-  return { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn };
-}
-
 function applyFiltersAndRender() {
   const { qEl, srcEl, catEl } = getControls();
+
   const query = safeText(qEl?.value);
   const selectedSource = safeText(srcEl?.value || "__all__");
   const selectedCategory = safeText(catEl?.value || "__all__");
@@ -514,42 +505,35 @@ function applyFiltersAndRender() {
   });
 
   STATE.lastFiltered = filtered;
-  renderList(filtered);
 
-  // linked options
+  // linked options (source depends on category / category depends on source)
   const linked = computeLinkedOptions(STATE.currentPool, selectedSource, selectedCategory);
   setSelectOptions(srcEl, linked.sources, "ソース：すべて");
   setSelectOptions(catEl, linked.categories, "カテゴリ：すべて");
+
+  renderList(filtered);
 }
 
 async function copyFilteredUrls() {
   const list = STATE.lastFiltered || [];
-  if (!list.length) {
-    toast("コピーするURLが無いで");
-    return;
-  }
+  if (!list.length) return toast("コピーするURLが無いで");
   const urls = list.map((it) => safeText(it.link)).filter(Boolean);
   await copyToClipboard(urls.join("\n"));
 }
 
 /* ---------- pool loading ---------- */
-function setCurrentPool(pool) {
-  STATE.currentPool = pool;
-}
-
 async function ensurePoolByRange(rangeValue) {
   const monthsNeeded = getRangeMonths(rangeValue);
   if (monthsNeeded <= 3) {
-    setCurrentPool(STATE.latestItems);
+    STATE.currentPool = STATE.latestItems;
     return;
   }
-
   if (!STATE.index?.months?.length) {
-    setCurrentPool(STATE.latestItems);
+    STATE.currentPool = STATE.latestItems;
     return;
   }
 
-  const allMonths = STATE.index.months.slice(); // ascending
+  const allMonths = STATE.index.months.slice(); // asc
   const target = allMonths.slice(-monthsNeeded);
   const targetSet = new Set(target);
 
@@ -575,27 +559,21 @@ async function ensurePoolByRange(rangeValue) {
     if (targetSet.has(mk)) merged.push(...items);
   }
   merged.push(...STATE.latestItems);
-  setCurrentPool(dedupeByLink(merged));
+  STATE.currentPool = dedupeByLink(merged);
 }
 
 /* ---------- theme ---------- */
 function applyTheme(theme) {
   STATE.theme = theme;
   document.documentElement.dataset.theme = theme;
-  try {
-    localStorage.setItem(LS_KEYS.theme, theme);
-  } catch {}
+  try { localStorage.setItem(LS_KEYS.theme, theme); } catch {}
 }
-
 function toggleTheme() {
   applyTheme(STATE.theme === "dark" ? "light" : "dark");
 }
-
 function initTheme() {
   let theme = "light";
-  try {
-    theme = localStorage.getItem(LS_KEYS.theme) || "light";
-  } catch {}
+  try { theme = localStorage.getItem(LS_KEYS.theme) || "light"; } catch {}
   applyTheme(theme === "dark" ? "dark" : "light");
 }
 
@@ -610,9 +588,7 @@ function insertToQuery(token) {
   qEl.value = before + token + after;
   const pos = (before + token).length;
   qEl.focus();
-  try {
-    qEl.setSelectionRange(pos, pos);
-  } catch {}
+  try { qEl.setSelectionRange(pos, pos); } catch {}
 }
 
 /* ---------- RSS memo ---------- */
@@ -625,13 +601,9 @@ function loadRssMemo() {
     return [];
   }
 }
-
 function saveRssMemo(arr) {
-  try {
-    localStorage.setItem(LS_KEYS.rssMemo, JSON.stringify(arr, null, 2));
-  } catch {}
+  try { localStorage.setItem(LS_KEYS.rssMemo, JSON.stringify(arr, null, 2)); } catch {}
 }
-
 function slugId(name, url) {
   const base = (name || url || "rss")
     .toLowerCase()
@@ -642,7 +614,6 @@ function slugId(name, url) {
   const tail = Math.random().toString(36).slice(2, 6);
   return `${base || "rss"}-${tail}`;
 }
-
 function toSourcesJsonArray(memos) {
   return memos.map((m) => ({
     id: safeText(m.id) || slugId(m.name, m.url),
@@ -654,8 +625,8 @@ function toSourcesJsonArray(memos) {
   }));
 }
 
-function ensureRssMemoPanel() {
-  if (document.querySelector("#rssMemoModal")) return;
+function ensureRssMemoModal() {
+  if (qs("#rssMemoModal")) return;
 
   const modal = document.createElement("div");
   modal.id = "rssMemoModal";
@@ -669,7 +640,8 @@ function ensureRssMemoPanel() {
       </div>
       <div class="modal-body">
         <div class="hint">
-          ここは<strong>メモ</strong>やで（収集に反映するには、コピーした内容を <code>config/sources.json</code> に貼ってな）。
+          ここは<strong>メモ</strong>やで。収集に反映するには、下の「まとめてコピー」を
+          <code>config/sources.json</code> に貼ってな。
         </div>
 
         <div class="form">
@@ -703,19 +675,18 @@ function ensureRssMemoPanel() {
         </div>
       </div>
     </div>
-  `;
+  `.trim();
+
   document.body.appendChild(modal);
 
-  // close
   qsa("[data-act='close']", modal).forEach((x) =>
     x.addEventListener("click", () => (modal.style.display = "none"))
   );
 
-  // add
-  modal.querySelector("#memoAdd").addEventListener("click", () => {
-    const name = safeText(modal.querySelector("#memoName")?.value).trim();
-    const url = safeText(modal.querySelector("#memoUrl")?.value).trim();
-    const category = safeText(modal.querySelector("#memoCategory")?.value).trim();
+  qs("#memoAdd", modal).addEventListener("click", () => {
+    const name = safeText(qs("#memoName", modal)?.value).trim();
+    const url = safeText(qs("#memoUrl", modal)?.value).trim();
+    const category = safeText(qs("#memoCategory", modal)?.value).trim();
     if (!url) return toast("URLは必須やで");
 
     const memos = loadRssMemo();
@@ -728,26 +699,23 @@ function ensureRssMemoPanel() {
       category: category || "",
       createdAt: new Date().toISOString(),
     });
+
     saveRssMemo(memos);
-
-    modal.querySelector("#memoName").value = "";
-    modal.querySelector("#memoUrl").value = "";
-    modal.querySelector("#memoCategory").value = "";
-
+    qs("#memoName", modal).value = "";
+    qs("#memoUrl", modal).value = "";
+    qs("#memoCategory", modal).value = "";
     refreshRssMemoList();
     toast("追加したで");
   });
 
-  // copy all
-  modal.querySelector("#memoCopyAll").addEventListener("click", async () => {
+  qs("#memoCopyAll", modal).addEventListener("click", async () => {
     const memos = loadRssMemo();
     if (!memos.length) return toast("メモが空やで");
     const payload = toSourcesJsonArray(memos);
     await copyToClipboard(JSON.stringify(payload, null, 2));
   });
 
-  // clear all
-  modal.querySelector("#memoClearAll").addEventListener("click", () => {
+  qs("#memoClearAll", modal).addEventListener("click", () => {
     if (!confirm("RSSメモを全部消す？")) return;
     saveRssMemo([]);
     refreshRssMemoList();
@@ -756,9 +724,9 @@ function ensureRssMemoPanel() {
 }
 
 function refreshRssMemoList() {
-  const modal = document.querySelector("#rssMemoModal");
+  const modal = qs("#rssMemoModal");
   if (!modal) return;
-  const box = modal.querySelector("#memoItems");
+  const box = qs("#memoItems", modal);
   if (!box) return;
 
   const memos = loadRssMemo();
@@ -772,18 +740,20 @@ function refreshRssMemoList() {
       const name = escapeHtml(m.name || "");
       const url = escapeHtml(m.url || "");
       const cat = escapeHtml(m.category || "");
+      const id = escapeHtml(m.id || "");
       return `
-      <div class="memo-item" data-id="${escapeHtml(m.id)}">
+      <div class="memo-item" data-id="${id}">
         <div class="memo-main">
           <div class="memo-name">${name}</div>
           <div class="memo-url">${url}</div>
           ${cat ? `<div class="memo-cat">${cat}</div>` : ""}
         </div>
         <div class="memo-actions">
-          <button class="btn btn-lite" data-act="memo-copy" data-id="${escapeHtml(m.id)}">1件コピー</button>
-          <button class="btn" data-act="memo-del" data-id="${escapeHtml(m.id)}">削除</button>
+          <button class="btn btn-lite" data-act="memo-copy" data-id="${id}">1件コピー</button>
+          <button class="btn" data-act="memo-del" data-id="${id}">削除</button>
         </div>
-      </div>`;
+      </div>
+      `.trim();
     })
     .join("");
 
@@ -810,13 +780,20 @@ function refreshRssMemoList() {
 }
 
 function ensureRssMemoButton() {
-  if (document.querySelector("#btnRssMemo")) return;
+  // すでにHTML側にあるボタンを優先（テキストで拾う）
+  const existing = qsa("button").find((b) => safeText(b.textContent).trim() === "RSS追加メモ");
+  if (existing) {
+    existing.addEventListener("click", () => {
+      ensureRssMemoModal();
+      refreshRssMemoList();
+      qs("#rssMemoModal").style.display = "block";
+    });
+    return;
+  }
 
-  // theme button exists in your UI (moon icon)
+  // なければ作る（テーマボタンの隣）
   const { themeBtn } = getControls();
-
   const btn = document.createElement("button");
-  btn.id = "btnRssMemo";
   btn.type = "button";
   btn.className = "btn btn-lite";
   btn.textContent = "RSS追加メモ";
@@ -824,25 +801,22 @@ function ensureRssMemoButton() {
   if (themeBtn && themeBtn.parentElement) {
     themeBtn.parentElement.insertBefore(btn, themeBtn.nextSibling);
   } else {
-    // fallback: header right-ish
-    const header = qsAny(["header", ".header", ".topbar", "body"], document) || document.body;
-    header.appendChild(btn);
+    document.body.appendChild(btn);
   }
 
   btn.addEventListener("click", () => {
-    ensureRssMemoPanel();
+    ensureRssMemoModal();
     refreshRssMemoList();
-    const modal = document.querySelector("#rssMemoModal");
-    modal.style.display = "block";
+    qs("#rssMemoModal").style.display = "block";
   });
 }
 
-/* ---------- boot wiring ---------- */
+/* ---------- wiring ---------- */
 function wireControls() {
   const { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, copyUrlsBtn, andBtn, orBtn, themeBtn } = getControls();
 
-  // ensure range select has values (if empty in HTML)
-  if (rangeEl && rangeEl.options && rangeEl.options.length <= 1) {
+  // range selectが空なら補完
+  if (rangeEl && (!rangeEl.options || rangeEl.options.length <= 1)) {
     rangeEl.innerHTML = `
       <option value="3m">検索範囲：直近3か月（標準）</option>
       <option value="1y">検索範囲：直近1年</option>
@@ -853,6 +827,8 @@ function wireControls() {
     `.trim();
   }
   if (rangeEl) rangeEl.value = rangeEl.value || DEFAULT_RANGE;
+
+  ensureShowLimitSelect();
 
   if (searchBtn) {
     searchBtn.addEventListener("click", async () => {
@@ -869,6 +845,7 @@ function wireControls() {
       if (srcEl) srcEl.value = "__all__";
       if (catEl) catEl.value = "__all__";
       if (rangeEl) rangeEl.value = DEFAULT_RANGE;
+
       await ensurePoolByRange(DEFAULT_RANGE);
       setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
       applyFiltersAndRender();
@@ -879,10 +856,7 @@ function wireControls() {
     copyUrlsBtn.addEventListener("click", copyFilteredUrls);
   }
 
-  if (themeBtn) {
-    themeBtn.addEventListener("click", toggleTheme);
-  }
-
+  if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
   if (andBtn) andBtn.addEventListener("click", () => insertToQuery(" "));
   if (orBtn) orBtn.addEventListener("click", () => insertToQuery(" | "));
 
@@ -924,16 +898,16 @@ async function main() {
     STATE.index = await fetchJson(PATHS.index);
   } catch (e) {
     console.warn("index.json load failed", e);
-    // still continue with latest only
   }
 
-  let latestText;
+  let latestText = "";
   try {
     latestText = await fetchText(PATHS.latest);
   } catch (e) {
     console.error("latest.ndjson load failed", e);
-    setStatus("latest.ndjson が読めへん（生成前 or パス違い）");
-    setCurrentPool([]);
+    setStatus("latest.ndjson が読めへん（生成前 or パス違い or キャッシュ）");
+    STATE.latestItems = [];
+    STATE.currentPool = [];
     renderList([]);
     wireControls();
     return;
@@ -943,19 +917,22 @@ async function main() {
   STATE.latestItems = dedupeByLink(latest);
 
   // default pool
-  setCurrentPool(STATE.latestItems);
+  STATE.currentPool = STATE.latestItems;
   STATE.lastFiltered = STATE.currentPool;
 
-  // initial filter options
+  // 初回 options セット
   const { srcEl, catEl } = getControls();
-  const srcs = uniq(STATE.currentPool.map((x) => safeText(x.source).trim()).filter(Boolean)).sort((a, b) => a.localeCompare(b, "ja"));
-  const cats = uniq(STATE.currentPool.map((x) => safeText(x.category).trim()).filter(Boolean)).sort((a, b) => a.localeCompare(b, "ja"));
+  const srcs = uniq(STATE.currentPool.map((x) => safeText(x.source).trim()).filter(Boolean))
+    .sort((a, b) => a.localeCompare(b, "ja"));
+  const cats = uniq(STATE.currentPool.map((x) => safeText(x.category).trim()).filter(Boolean))
+    .sort((a, b) => a.localeCompare(b, "ja"));
+
   setSelectOptions(srcEl, srcs, "ソース：すべて");
   setSelectOptions(catEl, cats, "カテゴリ：すべて");
 
   setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
-  renderList(STATE.currentPool);
 
+  renderList(STATE.currentPool);
   wireControls();
 }
 
