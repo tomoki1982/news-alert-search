@@ -1,7 +1,27 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"3fa5-64bca6ba25fc4-gzip\"",
+    "etag": "\"3fa5-64bca6ba398f5-gzip\"",
     "lastModified": "Fri, 27 Feb 2026 08:57:01 GMT",
-    "updatedAt": "2026-02-28T18:49:22+09:00"
+    "updatedAt": "2026-02-28T18:50:37+09:00"
+  },
+  "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
+    "etag": "W/\"5e3e5922c59d8a104b9b4111596ac39f\"",
+    "lastModified": "Sat, 28 Feb 2026 07:10:12 GMT",
+    "updatedAt": "2026-02-28T18:51:02+09:00"
+  },
+  "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
+    "etag": "W/\"73a87f8f36f6e50d975c6f9e403d4bc4\"",
+    "lastModified": "Sat, 28 Feb 2026 08:14:51 GMT",
+    "updatedAt": "2026-02-28T18:51:02+09:00"
+  },
+  "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
+    "etag": "W/\"e2c8df3af4a036d5663a4bb54b917bc5\"",
+    "lastModified": "Sat, 28 Feb 2026 09:13:19 GMT",
+    "updatedAt": "2026-02-28T18:51:03+09:00"
+  },
+  "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
+    "etag": "W/\"f246af98ce78e7c3825417c435a15464\"",
+    "lastModified": "Sat, 28 Feb 2026 09:10:45 GMT",
+    "updatedAt": "2026-02-28T18:51:03+09:00"
   }
 }

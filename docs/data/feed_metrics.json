@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T18:49:22+09:00",
+  "generatedAt": "2026-02-28T18:51:03+09:00",
   "timeoutSec": 25,
   "sources": [
     {
@@ -7,9 +7,59 @@
       "url": "https://www.jetro.go.jp/rss/biznews.xml",
       "category": "公的",
       "status": 200,
-      "elapsedMs": 148,
+      "elapsedMs": 162,
       "bytes": 16375,
       "items": 40,
+      "error": ""
+    },
+    {
+      "name": "中小企業庁",
+      "url": "https://www.chusho.meti.go.jp/rss/index.xml",
+      "category": "公的",
+      "status": null,
+      "elapsedMs": null,
+      "bytes": null,
+      "items": 0,
+      "error": "HTTPSConnectionPool(host='www.chusho.meti.go.jp', port=443): Read timed out. (read timeout=25)"
+    },
+    {
+      "name": "日経新聞速報",
+      "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
+      "category": "速報",
+      "status": 200,
+      "elapsedMs": 113,
+      "bytes": 14086,
+      "items": 30,
+      "error": ""
+    },
+    {
+      "name": "日経新聞",
+      "url": "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf",
+      "category": "政治・経済",
+      "status": 200,
+      "elapsedMs": 80,
+      "bytes": 14345,
+      "items": 30,
+      "error": ""
+    },
+    {
+      "name": "日経新聞",
+      "url": "https://assets.wor.jp/rss/rdf/nikkei/business.rdf",
+      "category": "ビジネス",
+      "status": 200,
+      "elapsedMs": 76,
+      "bytes": 14322,
+      "items": 30,
+      "error": ""
+    },
+    {
+      "name": "日経新聞",
+      "url": "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf",
+      "category": "マーケット",
+      "status": 200,
+      "elapsedMs": 77,
+      "bytes": 14146,
+      "items": 30,
       "error": ""
     }
   ]
