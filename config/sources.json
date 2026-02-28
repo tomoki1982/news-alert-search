@@ -86,5 +86,61 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "エピソード"
-   }
+   },
+  {
+    "id": "rss-ttsc",
+    "name": "日本銀行",
+    "url": "https://www.boj.or.jp/rss/statistics.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "統計"
+  },
+  {
+    "id": "rss-erhk",
+    "name": "経済産業省",
+    "url": "https://www.meti.go.jp/ml_index_release_atom.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ニュース"
+  },
+  {
+    "id": "rss-x5xk",
+    "name": "経済産業省",
+    "url": "https://www.meti.go.jp/statistics/st_news.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "統計"
+  },
+  {
+    "id": "rss-jhzk",
+    "name": "国土交通省",
+    "url": "https://www.mlit.go.jp/saigai.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "災害"
+  },
+  {
+    "id": "rss-h4w9",
+    "name": "国土交通省",
+    "url": "https://www.mlit.go.jp/pressrelease.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ニュース"
+  },
+  {
+    "id": "jogmec-1s6r",
+    "name": "JOGMEC",
+    "url": "https://oilgas-info.jogmec.go.jp/rsslist/report_all.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "エネルギー"
+  },
+  {
+    "id": "rss-yidd",
+    "name": "中小企業庁",
+    "url": "https://www.chusho.meti.go.jp/rss/index.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "下請"
+  }
 ]
