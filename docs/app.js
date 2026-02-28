@@ -1,15 +1,10 @@
 // docs/app.js
-// - AND/OR説明はUI側(index.html)に表示
-// - 検索範囲: デフォルト直近3か月
-// - 直近1〜5年を選ぶと、必要な過去アーカイブ(.ndjson.gz)を追加読み込み
-// - カード全体タップで元記事を同一タブで開く（軽量表示は撤去）
-// - URLコピーは残す（伝播停止）
 
 const state = {
   latest: [],
   allItems: [],
-  loadedArchives: new Set(), // path strings
-  archiveIndex: null,        // parsed index.json
+  loadedArchives: new Set(),
+  archiveIndex: null,
 };
 
 function qs(id) { return document.getElementById(id); }
@@ -63,29 +58,76 @@ function formatDate(iso) {
   }
 }
 
-function nowJst() {
-  // Date自体はUTC基準で保持されるが、差分計算はこれでOK
-  return new Date();
+/** ---------------------------
+ *  AND / OR クエリ解釈
+ *  - 全角スペース/半角スペース: AND
+ *  - | と ｜: OR
+ *  - "OR" / "or" も OR として扱う（間にスペースがあってもOK）
+ *  例) 中国 輸出規制 OR 半導体
+ *      中国 輸出規制 | 半導体
+ *      中国　輸出規制｜半導体
+ * -------------------------- */
+function normalizeQuery(q) {
+  if (!q) return "";
+  let s = String(q);
+
+  // 全角スペース→半角
+  s = s.replace(/\u3000/g, " ");
+
+  // 全角パイプ(｜)→半角(|)
+  s = s.replace(/｜/g, "|");
+
+  // OR キーワード→ |
+  // 「 OR 」だけ置換（単語境界）
+  s = s.replace(/\s+OR\s+/gi, " | ");
+
+  // 余分な空白整理
+  s = s.replace(/\s+/g, " ").trim();
+  // | の前後も整形
+  s = s.replace(/\s*\|\s*/g, " | ");
+  return s.trim();
 }
+
+// ORグループ配列: [ ["中国","輸出規制"], ["半導体"] ]
+function parseLogicQuery(q) {
+  const s = normalizeQuery(q);
+  if (!s) return [];
+
+  const orParts = s.split("|").map(x => x.trim()).filter(Boolean);
+  const groups = orParts.map(part =>
+    part.split(" ").map(w => w.trim()).filter(Boolean)
+  ).filter(g => g.length > 0);
+
+  return groups;
+}
+
+// groups が空なら通常 contains
+function matchLogic(groups, haystackLower) {
+  if (!groups || groups.length === 0) return true;
+
+  // OR: どれか1つの AND グループが成立すればOK
+  return groups.some(andWords =>
+    andWords.every(w => haystackLower.includes(w.toLowerCase()))
+  );
+}
+
+function nowJst() { return new Date(); }
 
 function cutoffDate(rangeValue) {
   const n = nowJst();
   const d = new Date(n.getTime());
-  if (rangeValue === "3m") {
-    d.setMonth(d.getMonth() - 3);
-  } else if (rangeValue.endsWith("y")) {
+  if (rangeValue === "3m") d.setMonth(d.getMonth() - 3);
+  else if (rangeValue.endsWith("y")) {
     const years = parseInt(rangeValue.slice(0, -1), 10);
     d.setFullYear(d.getFullYear() - years);
-  } else {
-    d.setMonth(d.getMonth() - 3);
-  }
+  } else d.setMonth(d.getMonth() - 3);
   return d;
 }
 
 function inRange(item, rangeValue) {
   const cd = cutoffDate(rangeValue);
   const t = item?.pubDate ? new Date(item.pubDate) : null;
-  if (!t || isNaN(t.getTime())) return true; // 日付が無いのは一旦含める
+  if (!t || isNaN(t.getTime())) return true;
   return t >= cd;
 }
 
@@ -118,7 +160,9 @@ function populateFilters(items) {
 }
 
 function applyFilters() {
-  const q = (qs("q")?.value || "").trim().toLowerCase();
+  const rawQ = (qs("q")?.value || "");
+  const groups = parseLogicQuery(rawQ);
+
   const src = qs("sourceFilter")?.value || "";
   const cat = qs("categoryFilter")?.value || "";
   const range = qs("rangeFilter")?.value || "3m";
@@ -132,11 +176,11 @@ function applyFilters() {
   if (src) items = items.filter(it => it.source === src);
   if (cat) items = items.filter(it => it.category === cat);
 
-  // キーワード
-  if (q) {
+  // AND/OR キーワード
+  if (rawQ.trim()) {
     items = items.filter(it => {
       const hay = `${it.title||""} ${it.source||""} ${it.category||""} ${it.link||""}`.toLowerCase();
-      return hay.includes(q);
+      return matchLogic(groups, hay);
     });
   }
 
@@ -176,8 +220,6 @@ function render(items) {
 
     const card = document.createElement("div");
     card.className = "card";
-
-    // カード全体タップで遷移
     card.addEventListener("click", () => openInSameTab(link));
 
     const openBtn = link
@@ -202,7 +244,6 @@ function render(items) {
       </div>
     `;
 
-    // ボタンは伝播停止
     const open = card.querySelector('button[data-open="1"]');
     if (open) {
       open.addEventListener("click", (e) => {
@@ -259,7 +300,6 @@ async function fetchJson(path) {
 }
 
 async function fetchGzipNdjson(path) {
-  // gzip対応チェック
   if (typeof DecompressionStream === "undefined") {
     throw new Error("このブラウザはgzip解凍に未対応（DecompressionStreamなし）");
   }
@@ -273,12 +313,10 @@ async function fetchGzipNdjson(path) {
 }
 
 function monthKeysForRange(rangeValue) {
-  // 例: 直近2年 → 24ヶ月分の YYYY-MM を返す
   const n = nowJst();
   const months = (rangeValue === "3m") ? 3 : (parseInt(rangeValue, 10) * 12);
   const keys = [];
   const d = new Date(n.getTime());
-  // 今月も含める（当月-0 〜 当月-(months-1)）
   for (let i = 0; i < months; i++) {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -289,16 +327,11 @@ function monthKeysForRange(rangeValue) {
 }
 
 function normalizeArchiveIndex(idx) {
-  // index.json の形が不明でも吸収する
-  // 期待: ["archive/2026/2026-02.ndjson.gz", ...]
-  // or { files: [...] } or { items:[{path:"..."}] } etc.
   if (!idx) return [];
   if (Array.isArray(idx)) return idx;
-
   if (Array.isArray(idx.files)) return idx.files;
   if (Array.isArray(idx.items)) return idx.items.map(x => x.path || x.file || x.url).filter(Boolean);
 
-  // object map { "2026-02": "archive/2026/2026-02.ndjson.gz" }
   const out = [];
   for (const k of Object.keys(idx)) {
     const v = idx[k];
@@ -308,27 +341,20 @@ function normalizeArchiveIndex(idx) {
 }
 
 function pickArchivePathsForRange(allPaths, rangeValue) {
-  // monthKey が含まれる path を拾う（YYYY-MM）
   const keys = new Set(monthKeysForRange(rangeValue));
   return allPaths.filter(p => {
-    // "2026-02" がパスに含まれる前提
-    for (const k of keys) {
-      if (p.includes(k)) return true;
-    }
+    for (const k of keys) if (p.includes(k)) return true;
     return false;
   });
 }
 
 async function ensureArchivesLoadedForRange(rangeValue) {
-  // 3mはlatestだけで十分（追加読み込みしない）
   if (rangeValue === "3m") return;
 
-  // index.json を読む（アーカイブ一覧）
   if (!state.archiveIndex) {
     try {
       state.archiveIndex = await fetchJson("./data/index.json");
     } catch (e) {
-      // index.json が無い/壊れてる場合でも、アプリ自体は動かす
       console.warn(e);
       setStatus("過去アーカイブの一覧が読めへんかった（index.json）");
       return;
@@ -343,7 +369,6 @@ async function ensureArchivesLoadedForRange(rangeValue) {
 
   setStatus(`過去データ読み込み中…（追加 ${needPaths.length} ファイル）`);
 
-  // まとめて読み込み（重すぎる場合は分割も可）
   const added = [];
   for (const p of needPaths) {
     try {
@@ -352,7 +377,6 @@ async function ensureArchivesLoadedForRange(rangeValue) {
       state.loadedArchives.add(p);
     } catch (e) {
       console.warn("archive load failed:", p, e);
-      // 失敗しても続行（1個コケても他は読む）
     }
   }
 
@@ -375,6 +399,20 @@ async function loadLatest() {
   setStatus(`準備OK（最新 ${state.latest.length} 件）`);
 }
 
+function insertToQuery(insertText) {
+  const input = qs("q");
+  if (!input) return;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const before = input.value.slice(0, start);
+  const after = input.value.slice(end);
+  input.value = before + insertText + after;
+
+  const pos = (before + insertText).length;
+  input.setSelectionRange(pos, pos);
+  input.focus();
+}
+
 function initEvents() {
   qs("searchBtn")?.addEventListener("click", async () => {
     const range = qs("rangeFilter")?.value || "3m";
@@ -387,7 +425,6 @@ function initEvents() {
     if (qs("sourceFilter")) qs("sourceFilter").value = "";
     if (qs("categoryFilter")) qs("categoryFilter").value = "";
     if (qs("rangeFilter")) qs("rangeFilter").value = "3m";
-    // resetは即描画（過去読み込みはしない）
     render(applyFilters());
   });
 
@@ -401,9 +438,11 @@ function initEvents() {
 
   qs("sourceFilter")?.addEventListener("change", () => render(applyFilters()));
   qs("categoryFilter")?.addEventListener("change", () => render(applyFilters()));
-
-  // 範囲を変えたら見た目を即反映（必要なら検索時に過去を読む）
   qs("rangeFilter")?.addEventListener("change", () => render(applyFilters()));
+
+  // AND/ORボタン
+  qs("btnAnd")?.addEventListener("click", () => insertToQuery(" "));
+  qs("btnOr")?.addEventListener("click", () => insertToQuery(" | "));
 }
 
 (async function main(){
