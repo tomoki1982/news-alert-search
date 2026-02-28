@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-01T07:49:42+09:00",
+  "generatedAt": "2026-03-01T08:18:52+09:00",
   "connectTimeoutSec": 3,
   "readTimeoutSec": 5,
   "timeoutSec": 5,
@@ -8,10 +8,10 @@
       "name": "JETRO",
       "url": "https://www.jetro.go.jp/rss/biznews.xml",
       "category": "公的",
-      "status": 304,
-      "elapsedMs": 515,
-      "bytes": 0,
-      "items": 0,
+      "status": 200,
+      "elapsedMs": 84,
+      "bytes": 16375,
+      "items": 40,
       "error": ""
     },
     {
@@ -19,7 +19,7 @@
       "url": "https://www.tdb.co.jp/rss/jouhou.rdf",
       "category": "倒産",
       "status": 304,
-      "elapsedMs": 983,
+      "elapsedMs": 949,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -29,8 +29,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
       "category": "速報",
       "status": 200,
-      "elapsedMs": 201,
-      "bytes": 14126,
+      "elapsedMs": 78,
+      "bytes": 14198,
       "items": 30,
       "error": ""
     },
@@ -39,8 +39,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf",
       "category": "政治・経済",
       "status": 200,
-      "elapsedMs": 522,
-      "bytes": 14239,
+      "elapsedMs": 47,
+      "bytes": 14228,
       "items": 30,
       "error": ""
     },
@@ -49,7 +49,7 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/business.rdf",
       "category": "ビジネス",
       "status": 304,
-      "elapsedMs": 66,
+      "elapsedMs": 48,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -59,7 +59,7 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 523,
+      "elapsedMs": 45,
       "bytes": 14175,
       "items": 30,
       "error": ""
@@ -68,51 +68,121 @@
       "name": "東京商工リサーチ",
       "url": "https://www.tsr-net.co.jp/rss/news_status.xml",
       "category": "倒産",
-      "status": 200,
-      "elapsedMs": 625,
-      "bytes": 9123,
-      "items": 10,
+      "status": 304,
+      "elapsedMs": 675,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
       "name": "東京商工リサーチ",
       "url": "https://www.tsr-net.co.jp/rss/news_flash.xml",
       "category": "速報",
-      "status": 200,
-      "elapsedMs": 716,
-      "bytes": 9921,
-      "items": 10,
+      "status": 304,
+      "elapsedMs": 659,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
       "name": "東京商工リサーチ",
       "url": "https://www.tsr-net.co.jp/rss/news.xml",
       "category": "ニュース",
-      "status": 200,
-      "elapsedMs": 721,
-      "bytes": 8705,
-      "items": 10,
+      "status": 304,
+      "elapsedMs": 488,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
       "name": "東京商工リサーチ",
       "url": "https://www.tsr-net.co.jp/rss/news_analysis.xml",
       "category": "レポート",
-      "status": 200,
-      "elapsedMs": 620,
-      "bytes": 78774,
-      "items": 10,
+      "status": 304,
+      "elapsedMs": 918,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
       "name": "東京商工リサーチ",
       "url": "https://www.tsr-net.co.jp/rss/news_detail.xml",
       "category": "エピソード",
-      "status": 200,
-      "elapsedMs": 618,
-      "bytes": 7744,
-      "items": 10,
+      "status": 304,
+      "elapsedMs": 654,
+      "bytes": 0,
+      "items": 0,
       "error": ""
+    },
+    {
+      "name": "日本銀行",
+      "url": "https://www.boj.or.jp/rss/statistics.xml",
+      "category": "統計",
+      "status": 200,
+      "elapsedMs": 471,
+      "bytes": 18919,
+      "items": 58,
+      "error": ""
+    },
+    {
+      "name": "経済産業省",
+      "url": "https://www.meti.go.jp/ml_index_release_atom.xml",
+      "category": "ニュース",
+      "status": null,
+      "elapsedMs": null,
+      "bytes": null,
+      "items": 0,
+      "error": "HTTPSConnectionPool(host='www.meti.go.jp', port=443): Read timed out. (read timeout=5)"
+    },
+    {
+      "name": "経済産業省",
+      "url": "https://www.meti.go.jp/statistics/st_news.xml",
+      "category": "統計",
+      "status": null,
+      "elapsedMs": null,
+      "bytes": null,
+      "items": 0,
+      "error": "HTTPSConnectionPool(host='www.meti.go.jp', port=443): Read timed out. (read timeout=5)"
+    },
+    {
+      "name": "国土交通省",
+      "url": "https://www.mlit.go.jp/saigai.rdf",
+      "category": "災害",
+      "status": 200,
+      "elapsedMs": 1016,
+      "bytes": 28350,
+      "items": 50,
+      "error": ""
+    },
+    {
+      "name": "国土交通省",
+      "url": "https://www.mlit.go.jp/pressrelease.rdf",
+      "category": "ニュース",
+      "status": 200,
+      "elapsedMs": 507,
+      "bytes": 29030,
+      "items": 50,
+      "error": ""
+    },
+    {
+      "name": "JOGMEC",
+      "url": "https://oilgas-info.jogmec.go.jp/rsslist/report_all.xml",
+      "category": "エネルギー",
+      "status": 200,
+      "elapsedMs": 1063,
+      "bytes": 7134,
+      "items": 24,
+      "error": ""
+    },
+    {
+      "name": "中小企業庁",
+      "url": "https://www.chusho.meti.go.jp/rss/index.xml",
+      "category": "下請",
+      "status": null,
+      "elapsedMs": null,
+      "bytes": null,
+      "items": 0,
+      "error": "HTTPSConnectionPool(host='www.chusho.meti.go.jp', port=443): Read timed out. (read timeout=5)"
     }
   ]
 }
