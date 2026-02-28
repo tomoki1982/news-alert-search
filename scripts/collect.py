@@ -28,6 +28,12 @@ ARCHIVE_DIR = ROOT / "archive"
 KEEP_YEARS = 5
 LATEST_MONTHS = 3
 
+# ---- timeouts (requested) ----
+CONNECT_TIMEOUT_SEC = 3
+READ_TIMEOUT_SEC = 5
+REQUEST_TIMEOUT = (CONNECT_TIMEOUT_SEC, READ_TIMEOUT_SEC)  # for requests
+
+
 def now_jst() -> datetime:
     return datetime.now(tz=JST)
 
@@ -168,7 +174,7 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
         headers["If-Modified-Since"] = last_mod
 
     t0 = time.monotonic()
-    r = requests.get(url, headers=headers, timeout=(3,5))
+    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
     elapsed_ms = int((time.monotonic() - t0) * 1000)
 
     info = {
@@ -409,7 +415,9 @@ def generate_latest():
 def write_feed_metrics(metrics: list[dict]):
     payload = {
         "generatedAt": now_jst().isoformat(timespec="seconds"),
-        "timeoutSec": REQUEST_TIMEOUT,
+        "connectTimeoutSec": CONNECT_TIMEOUT_SEC,
+        "readTimeoutSec": READ_TIMEOUT_SEC,
+        "timeoutSec": READ_TIMEOUT_SEC,  # legacy single value (display-friendly)
         "sources": metrics,
     }
     with open(FEED_METRICS_JSON, "w", encoding="utf-8") as f:
