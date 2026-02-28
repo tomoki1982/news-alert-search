@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>News Finder</title>
-  <link rel="stylesheet" href="./style.css?v=2" />
+  <link rel="stylesheet" href="./style.css?v=3" />
 </head>
 <body>
   <div class="wrap">
@@ -12,7 +12,9 @@
       <div class="titleRow">
         <div>
           <h1 class="h1">News Finder</h1>
-          <div class="sub">直近3か月 + 過去を段階拡張（最大5年）</div>
+          <div class="sub">
+            ルール：スペース=AND、|=OR（例： 中国 輸出規制 | 半導体 ）
+          </div>
         </div>
         <button id="themeToggle" class="iconBtn" type="button" aria-label="toggle theme">🌙</button>
       </div>
@@ -24,25 +26,24 @@
           <select id="sourceFilter" class="select">
             <option value="">ソース：すべて</option>
           </select>
+
           <select id="categoryFilter" class="select">
             <option value="">カテゴリ：すべて</option>
           </select>
         </div>
 
         <div class="row">
+          <select id="rangeFilter" class="select">
+            <option value="3m" selected>検索範囲：直近3か月（標準）</option>
+            <option value="1y">検索範囲：直近1年</option>
+            <option value="2y">検索範囲：直近2年</option>
+            <option value="3y">検索範囲：直近3年</option>
+            <option value="4y">検索範囲：直近4年</option>
+            <option value="5y">検索範囲：直近5年</option>
+          </select>
+
           <button id="searchBtn" class="btn primary" type="button">検索</button>
           <button id="resetBtn" class="btn" type="button">リセット</button>
-        </div>
-
-        <div class="row">
-          <div class="chips">
-            <span class="chip">検索範囲：</span>
-            <span class="chip active">直近3か月</span>
-          </div>
-          <div class="chips">
-            <span class="chip">過去も探す</span>
-            <span class="chip">（直近1年）</span>
-          </div>
         </div>
 
         <div class="statusLine">
@@ -57,7 +58,6 @@
     </main>
   </div>
 
-  <!-- ✅ app.js も v=2 で強制更新 -->
-  <script src="./app.js?v=2"></script>
+  <script src="./app.js?v=3"></script>
 </body>
 </html>
