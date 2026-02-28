@@ -1,0 +1,10 @@
+[
+  {
+    "id": "jetro",
+    "name": "JETRO",
+    "url": "https://www.jetro.go.jp/rss/biznews.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "公的"
+  }
+]
