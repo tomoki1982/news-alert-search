@@ -1,33 +1,33 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"3fa5-64bca6ba398f5-gzip\"",
+    "etag": "\"3fa5-64bca6ba25fc4-gzip\"",
     "lastModified": "Fri, 27 Feb 2026 08:57:01 GMT",
-    "updatedAt": "2026-02-28T21:35:27+09:00"
+    "updatedAt": "2026-02-28T22:15:56+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
-    "etag": "\"6296109fed401d93deb745da55cf9051\"",
-    "lastModified": "Sat, 28 Feb 2026 10:16:53 GMT",
-    "updatedAt": "2026-02-28T21:35:27+09:00"
+    "etag": "W/\"5f5f1c025bd9a61579af4b9845c181b2\"",
+    "lastModified": "Sat, 28 Feb 2026 12:15:52 GMT",
+    "updatedAt": "2026-02-28T22:15:57+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
-    "etag": "\"170588a59960271f50af87d2b9226fe6\"",
-    "lastModified": "Sat, 28 Feb 2026 10:14:59 GMT",
-    "updatedAt": "2026-02-28T21:35:27+09:00"
+    "etag": "W/\"4fbf2250fbdb00c26efa243e5408d006\"",
+    "lastModified": "Sat, 28 Feb 2026 11:14:46 GMT",
+    "updatedAt": "2026-02-28T22:15:57+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
-    "etag": "\"e71c07e85659df14061978c5c8d48155\"",
-    "lastModified": "Sat, 28 Feb 2026 11:14:43 GMT",
-    "updatedAt": "2026-02-28T21:35:28+09:00"
+    "etag": "W/\"43bcbb9eb7368a88909f6bad0c0708ae\"",
+    "lastModified": "Sat, 28 Feb 2026 12:11:58 GMT",
+    "updatedAt": "2026-02-28T22:15:57+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
-    "etag": "W/\"1f7b9dbcf1fd2785d959636f932d5a99\"",
-    "lastModified": "Sat, 28 Feb 2026 10:15:49 GMT",
-    "updatedAt": "2026-02-28T21:35:28+09:00"
+    "etag": "W/\"a2acac523c5dd9fc2e717504ab17b413\"",
+    "lastModified": "Sat, 28 Feb 2026 12:11:55 GMT",
+    "updatedAt": "2026-02-28T22:15:57+09:00"
   },
   "https://www.tdb.co.jp/rss/jouhou.rdf": {
     "etag": "\"4e36-64bc2e76235fb\"",
     "lastModified": "Thu, 26 Feb 2026 23:58:57 GMT",
-    "updatedAt": "2026-02-28T21:35:27+09:00"
+    "updatedAt": "2026-02-28T22:15:57+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_status.xml": {
     "etag": "",
