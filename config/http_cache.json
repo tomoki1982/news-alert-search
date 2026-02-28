@@ -1,33 +1,33 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"3fa5-64bca6ba398f5-gzip\"",
+    "etag": "\"3fa5-64bca6ba20843-gzip\"",
     "lastModified": "Fri, 27 Feb 2026 08:57:01 GMT",
-    "updatedAt": "2026-03-01T05:50:41+09:00"
+    "updatedAt": "2026-03-01T06:39:48+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
-    "etag": "W/\"7b9b9c80cea14c074137a55fb5834771\"",
-    "lastModified": "Sat, 28 Feb 2026 18:10:12 GMT",
-    "updatedAt": "2026-03-01T05:50:42+09:00"
+    "etag": "W/\"d3f4853f3be3d72ca15921b159e02662\"",
+    "lastModified": "Sat, 28 Feb 2026 20:10:48 GMT",
+    "updatedAt": "2026-03-01T06:39:48+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
-    "etag": "W/\"d5b405769748af1c54cbfdca12128b67\"",
-    "lastModified": "Sat, 28 Feb 2026 19:10:53 GMT",
-    "updatedAt": "2026-03-01T05:50:42+09:00"
+    "etag": "W/\"3786612e03ad98bb85b35776cd02bc20\"",
+    "lastModified": "Sat, 28 Feb 2026 20:10:12 GMT",
+    "updatedAt": "2026-03-01T06:39:48+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
-    "etag": "W/\"844a11bd41955b8f47456684b95e1e9a\"",
-    "lastModified": "Sat, 28 Feb 2026 19:10:52 GMT",
-    "updatedAt": "2026-03-01T05:50:42+09:00"
+    "etag": "W/\"6c6798670401e5378dff90de6091f7ff\"",
+    "lastModified": "Sat, 28 Feb 2026 21:10:57 GMT",
+    "updatedAt": "2026-03-01T06:39:49+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
-    "etag": "W/\"694e125386cde52cb10a04f209db8f2c\"",
-    "lastModified": "Sat, 28 Feb 2026 18:14:09 GMT",
-    "updatedAt": "2026-03-01T05:50:42+09:00"
+    "etag": "W/\"1db8287b73aee555855524ceda57b6be\"",
+    "lastModified": "Sat, 28 Feb 2026 20:10:51 GMT",
+    "updatedAt": "2026-03-01T06:39:50+09:00"
   },
   "https://www.tdb.co.jp/rss/jouhou.rdf": {
     "etag": "\"4e36-64bc2e76235fb\"",
     "lastModified": "Thu, 26 Feb 2026 23:58:57 GMT",
-    "updatedAt": "2026-03-01T05:50:42+09:00"
+    "updatedAt": "2026-03-01T06:39:48+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_status.xml": {
     "etag": "",
