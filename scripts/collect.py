@@ -15,28 +15,20 @@ JST = ZoneInfo("Asia/Tokyo")
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_SOURCES = ROOT / "config" / "sources.json"
+CONFIG_CACHE = ROOT / "config" / "http_cache.json"
 
 DOCS_DIR = ROOT / "docs"
 DOCS_DATA_DIR = DOCS_DIR / "data"
 INDEX_JSON = DOCS_DATA_DIR / "index.json"
 LATEST_NDJSON = DOCS_DATA_DIR / "latest.ndjson"
+FEED_METRICS_JSON = DOCS_DATA_DIR / "feed_metrics.json"
 
 ARCHIVE_DIR = ROOT / "archive"
 
 KEEP_YEARS = 5
 LATEST_MONTHS = 3
 
-# ここは短くしてもええけど、今は現状維持
 REQUEST_TIMEOUT = 25
-
-# ★ 追加：HTTPキャッシュ状態（ETag/Last-Modified）を保存するファイル
-HTTP_CACHE_FILE = ROOT / "config" / "http_cache.json"
-
-# ★ 追加：RSSごとの速度メトリクスを書き出す（確認用）
-FEED_METRICS_JSON = DOCS_DATA_DIR / "feed_metrics.json"
-
-# ★ 遅いRSSの警告ライン（ms）
-SLOW_FEED_MS = 4000
 
 
 def now_jst() -> datetime:
@@ -52,8 +44,24 @@ def ensure_dirs():
 def load_sources():
     with open(CONFIG_SOURCES, "r", encoding="utf-8") as f:
         data = json.load(f)
-    # enabled only
     return [s for s in data if s.get("enabled", True)]
+
+
+def load_http_cache() -> dict:
+    if not CONFIG_CACHE.exists():
+        return {}
+    try:
+        with open(CONFIG_CACHE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_http_cache(cache: dict):
+    tmp = CONFIG_CACHE.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+    tmp.replace(CONFIG_CACHE)
 
 
 def safe_text(s):
@@ -62,39 +70,7 @@ def safe_text(s):
     return str(s).strip()
 
 
-def load_http_cache() -> dict:
-    """
-    {
-      "https://example.com/rss": {
-         "etag": "...",
-         "last_modified": "...",
-         "last_status": 200,
-         "last_checked": "2026-02-28T..."
-      },
-      ...
-    }
-    """
-    if not HTTP_CACHE_FILE.exists():
-        return {}
-    try:
-        with open(HTTP_CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f) or {}
-    except Exception:
-        return {}
-
-
-def save_http_cache(cache: dict):
-    with open(HTTP_CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-
-
 def parse_pubdate(entry) -> datetime | None:
-    """
-    feedparser gives:
-      - published_parsed / updated_parsed (time.struct_time in UTC-ish)
-      - published / updated strings
-    We normalize to aware datetime UTC then convert to JST for month bucketing.
-    """
     dt = None
     if hasattr(entry, "published_parsed") and entry.published_parsed:
         dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
@@ -175,83 +151,50 @@ def read_latest_links() -> set[str]:
     return links
 
 
-def fetch_feed(url: str, http_cache: dict) -> tuple[feedparser.FeedParserDict | None, dict]:
+def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     """
-    Returns (feed_or_none, info)
-    info example:
-      { "status": 200/304/..., "elapsedMs": 1234, "usedCache": true/false, "error": "..." }
+    Return (content_bytes or None if 304), and info dict.
+    Uses ETag/Last-Modified cache when available.
     """
     headers = {
-        "User-Agent": "rss-collector/1.1 (+https://github.com/)",
+        "User-Agent": "rss-collector/1.0 (+https://github.com/)",
         "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
     }
 
-    cache = http_cache.get(url, {}) or {}
-    used_cache = False
+    cached = http_cache.get(url, {}) if isinstance(http_cache, dict) else {}
+    etag = cached.get("etag")
+    last_mod = cached.get("lastModified")
 
-    # ★ 条件付きGET
-    etag = safe_text(cache.get("etag"))
-    last_mod = safe_text(cache.get("last_modified"))
     if etag:
         headers["If-None-Match"] = etag
-        used_cache = True
     if last_mod:
         headers["If-Modified-Since"] = last_mod
-        used_cache = True
 
-    t0 = time.perf_counter()
-    try:
-        r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+    t0 = time.monotonic()
+    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+    elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-        # ★ 更新なし：即スキップ
-        if r.status_code == 304:
-            http_cache[url] = {
-                **cache,
-                "last_status": 304,
-                "last_checked": now_jst().isoformat(timespec="seconds"),
-            }
-            return None, {
-                "status": 304,
-                "elapsedMs": elapsed_ms,
-                "usedCache": used_cache,
-            }
+    info = {
+        "status": r.status_code,
+        "elapsedMs": elapsed_ms,
+        "bytes": len(r.content) if r.content else 0,
+    }
 
-        r.raise_for_status()
-
-        # ★ 次回のために保存（あれば）
-        new_etag = safe_text(r.headers.get("ETag"))
-        new_last_mod = safe_text(r.headers.get("Last-Modified"))
-        updated = dict(cache)
-        if new_etag:
-            updated["etag"] = new_etag
-        if new_last_mod:
-            updated["last_modified"] = new_last_mod
-        updated["last_status"] = r.status_code
-        updated["last_checked"] = now_jst().isoformat(timespec="seconds")
-        http_cache[url] = updated
-
-        feed = feedparser.parse(r.content)
-        return feed, {
-            "status": r.status_code,
-            "elapsedMs": elapsed_ms,
-            "usedCache": used_cache,
-            "bytes": len(r.content) if r.content else 0,
-        }
-
-    except Exception as e:
-        elapsed_ms = int((time.perf_counter() - t0) * 1000)
+    # cache update (even when 304 sometimes)
+    new_etag = r.headers.get("ETag")
+    new_last_mod = r.headers.get("Last-Modified")
+    if new_etag or new_last_mod:
         http_cache[url] = {
-            **cache,
-            "last_status": -1,
-            "last_checked": now_jst().isoformat(timespec="seconds"),
+            "etag": new_etag or etag or "",
+            "lastModified": new_last_mod or last_mod or "",
+            "updatedAt": now_jst().isoformat(timespec="seconds"),
         }
-        return None, {
-            "status": -1,
-            "elapsedMs": elapsed_ms,
-            "usedCache": used_cache,
-            "error": str(e),
-        }
+
+    if r.status_code == 304:
+        return None, info
+
+    r.raise_for_status()
+    return r.content, info
 
 
 def normalize_entry(entry, source_name: str, source_category: str) -> dict | None:
@@ -277,10 +220,10 @@ def normalize_entry(entry, source_name: str, source_category: str) -> dict | Non
 
 def collect_all() -> tuple[list[dict], list[dict]]:
     sources = load_sources()
-    out: list[dict] = []
-    metrics: list[dict] = []
-
     http_cache = load_http_cache()
+
+    out = []
+    metrics = []
 
     for s in sources:
         name = safe_text(s.get("name", s.get("id", "source")))
@@ -290,52 +233,53 @@ def collect_all() -> tuple[list[dict], list[dict]]:
         if not url:
             continue
 
-        feed, info = fetch_feed(url, http_cache)
-
         m = {
             "name": name,
             "url": url,
             "category": category,
-            "status": info.get("status"),
-            "elapsedMs": info.get("elapsedMs"),
-            "usedCache": info.get("usedCache", False),
-            "bytes": info.get("bytes", 0),
-            "at": now_jst().isoformat(timespec="seconds"),
+            "status": None,
+            "elapsedMs": None,
+            "bytes": None,
+            "items": 0,
+            "error": "",
         }
-        if "error" in info:
-            m["error"] = info["error"]
-        metrics.append(m)
 
-        # 遅いRSSをログで目立たせる
-        if (info.get("elapsedMs") or 0) >= SLOW_FEED_MS:
-            print(f"[SLOW] {name} {info.get('elapsedMs')}ms {url}")
+        try:
+            content, info = fetch_feed(url, http_cache)
+            m["status"] = info.get("status")
+            m["elapsedMs"] = info.get("elapsedMs")
+            m["bytes"] = info.get("bytes")
 
-        # 304/失敗ならスキップ
-        if feed is None:
-            if info.get("status") == 304:
-                print(f"[SKIP] not modified: {name}")
-            else:
-                print(f"[WARN] fetch failed: {name} {url} -> {info.get('error','unknown')}")
+            if content is None:
+                # 304 Not Modified
+                metrics.append(m)
+                continue
+
+            feed = feedparser.parse(content)
+            entries = getattr(feed, "entries", []) or []
+            for entry in entries:
+                it = normalize_entry(entry, name, category)
+                if it:
+                    out.append(it)
+                    m["items"] += 1
+
+            metrics.append(m)
+
+        except Exception as e:
+            m["error"] = str(e)
+            metrics.append(m)
+            print(f"[WARN] fetch failed: {name} {url} -> {e}")
             continue
 
-        entries = getattr(feed, "entries", []) or []
-        for entry in entries:
-            it = normalize_entry(entry, name, category)
-            if it:
-                out.append(it)
-
-    # ★ http cache保存（次回の304判定に必要）
+    # save http cache
     save_http_cache(http_cache)
 
     # dedupe within batch by link, keep newest pubDate
     best = {}
     for it in out:
         lk = it["link"]
-        if lk not in best:
+        if lk not in best or it["pubDate"] > best[lk]["pubDate"]:
             best[lk] = it
-        else:
-            if it["pubDate"] > best[lk]["pubDate"]:
-                best[lk] = it
 
     return list(best.values()), metrics
 
@@ -466,16 +410,10 @@ def generate_latest():
 
 
 def write_feed_metrics(metrics: list[dict]):
-    """
-    ブラウザから直接見る用（任意）
-    """
-    metrics_sorted = sorted(metrics, key=lambda x: x.get("elapsedMs", 0), reverse=True)
     payload = {
         "generatedAt": now_jst().isoformat(timespec="seconds"),
         "timeoutSec": REQUEST_TIMEOUT,
-        "slowMs": SLOW_FEED_MS,
-        "count": len(metrics_sorted),
-        "feeds": metrics_sorted,
+        "sources": metrics,
     }
     with open(FEED_METRICS_JSON, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
@@ -493,8 +431,6 @@ def main():
     prune_old_archives()
     generate_index()
     generate_latest()
-
-    # ★ どれが遅いか見える化（任意）
     write_feed_metrics(metrics)
 
     print("[INFO] done")
