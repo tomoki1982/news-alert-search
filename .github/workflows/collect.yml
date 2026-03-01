@@ -29,7 +29,7 @@ jobs:
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install feedparser requests ptyhon-dateutil httpx
+          pip install feedparser requests python-dateutil httpx
 
       - name: Run collector
         env:
