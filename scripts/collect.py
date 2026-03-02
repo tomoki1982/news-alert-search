@@ -166,14 +166,13 @@ def _update_http_cache_from_headers(http_cache: dict, url: str, headers: dict, p
             "updatedAt": now_jst().isoformat(timespec="seconds"),
         }
         
-    def fetch_by_curl(url: str) -> bytes:
+def fetch_by_curl(url: str) -> bytes:
     ua = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/122.0.0.0 Safari/537.36"
     )
-    # --ipv4: これが刺さるケースがある
-    # --max-time: 全体の上限（秒）
+
     cmd = [
         "curl", "-L", "--compressed",
         "--ipv4",
@@ -182,10 +181,16 @@ def _update_http_cache_from_headers(http_cache: dict, url: str, headers: dict, p
         "--max-time", "20",
         url,
     ]
+
     p = subprocess.run(cmd, capture_output=True)
+
     if p.returncode != 0:
-        raise RuntimeError((p.stderr or b"").decode("utf-8", "replace").strip() or "curl failed")
-    return p.stdout    
+        raise RuntimeError(
+            (p.stderr or b"").decode("utf-8", "replace").strip()
+            or "curl failed"
+        )
+
+    return p.stdout   
 
 def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     """
