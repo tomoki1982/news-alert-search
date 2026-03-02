@@ -251,16 +251,16 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     for attempt in range(2):  # 2回だけ（軽いリトライ）
         t1 = time.monotonic()
         try:
-            use_curl = (
-  　　　　　　  "www.meti.go.jp" in url
-   　　　　　　　 or "www.chusho.meti.go.jp" in url
-　　　　　　　)
+use_curl = (
+    ("www.meti.go.jp" in url)
+    or ("www.chusho.meti.go.jp" in url)
+)
 
-　　　     　if use_curl:
-　　　         content = fetch_by_curl(url)
- 　　　　      elapsed_ms = int((time.monotonic() - t0) * 1000)
- 　　　　      info = {"status": 200, "elapsedMs": elapsed_ms, "bytes": len(content)}
- 　　　　　    return content, info
+if use_curl:
+    content = fetch_by_curl(url)
+    elapsed_ms = int((time.monotonic() - t1) * 1000)
+    info = {"status": 200, "elapsedMs": elapsed_ms, "bytes": len(content)}
+    return content, info
 
             with httpx.Client(http2=True, follow_redirects=True, timeout=timeout, headers=base_headers) as client:
                     resp = client.get(url)
