@@ -251,51 +251,6 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
         # 必要ならここでraiseして上に投げる
         raise
 
-    # ---- 2) httpx (http2 + follow_redirects) ----
-    timeout = httpx.Timeout(CONNECT_TIMEOUT_SEC, read=READ_TIMEOUT_SEC)
-
-    last_err = None
-    for attempt in range(2):  # 2回だけ（軽いリトライ）
-        t1 = time.monotonic()
-        try:
-use_curl = (
-    ("www.meti.go.jp" in url)
-    or ("www.chusho.meti.go.jp" in url)
-)
-
-if use_curl:
-    content = fetch_by_curl(url)
-    elapsed_ms = int((time.monotonic() - t1) * 1000)
-    info = {"status": 200, "elapsedMs": elapsed_ms, "bytes": len(content)}
-    return content, info
-
-            with httpx.Client(http2=True, follow_redirects=True, timeout=timeout, headers=base_headers) as client:
-                    resp = client.get(url)
-            elapsed_ms = int((time.monotonic() - t1) * 1000)
-
-            info = {
-                "status": resp.status_code,
-                "elapsedMs": elapsed_ms,
-                "bytes": len(resp.content) if resp.content else 0,
-            }
-
-            _update_http_cache_from_headers(http_cache, url, dict(resp.headers), etag, last_mod)
-
-            if resp.status_code == 304:
-                return None, info
-
-            resp.raise_for_status()
-            return resp.content, info
-
-        except Exception as e:
-            last_err = e
-            # ちょい間を置いて再トライ
-            time.sleep(0.25)
-
-    # 最後は例外として返す（呼び元で metrics に error が入る）
-    raise last_err
-
-
 def normalize_entry(entry, source_name: str, source_category: str) -> dict | None:
     title = safe_text(getattr(entry, "title", ""))
     link = safe_text(getattr(entry, "link", ""))
