@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T15:00:58+09:00",
+  "generatedAt": "2026-03-02T19:33:17+09:00",
   "connectTimeoutSec": 3,
   "readTimeoutSec": 5,
   "timeoutSec": 5,
@@ -8,20 +8,20 @@
       "name": "JETRO",
       "url": "https://www.jetro.go.jp/rss/biznews.xml",
       "category": "公的",
-      "status": 200,
-      "elapsedMs": 535,
-      "bytes": 16399,
-      "items": 40,
+      "status": 304,
+      "elapsedMs": 208,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
       "name": "帝国データバンク",
       "url": "https://www.tdb.co.jp/rss/jouhou.rdf",
       "category": "倒産",
-      "status": 304,
-      "elapsedMs": 820,
-      "bytes": 0,
-      "items": 0,
+      "status": 200,
+      "elapsedMs": 1037,
+      "bytes": 20099,
+      "items": 40,
       "error": ""
     },
     {
@@ -29,8 +29,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
       "category": "速報",
       "status": 200,
-      "elapsedMs": 88,
-      "bytes": 14167,
+      "elapsedMs": 214,
+      "bytes": 14122,
       "items": 30,
       "error": ""
     },
@@ -39,8 +39,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf",
       "category": "政治・経済",
       "status": 200,
-      "elapsedMs": 61,
-      "bytes": 14220,
+      "elapsedMs": 42,
+      "bytes": 14252,
       "items": 30,
       "error": ""
     },
@@ -49,8 +49,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/business.rdf",
       "category": "ビジネス",
       "status": 200,
-      "elapsedMs": 807,
-      "bytes": 14182,
+      "elapsedMs": 43,
+      "bytes": 14265,
       "items": 30,
       "error": ""
     },
@@ -59,8 +59,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 57,
-      "bytes": 14267,
+      "elapsedMs": 46,
+      "bytes": 14029,
       "items": 30,
       "error": ""
     },
@@ -69,7 +69,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_status.xml",
       "category": "倒産",
       "status": 200,
-      "elapsedMs": 760,
+      "elapsedMs": 1030,
       "bytes": 9123,
       "items": 10,
       "error": ""
@@ -79,7 +79,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_flash.xml",
       "category": "速報",
       "status": 200,
-      "elapsedMs": 745,
+      "elapsedMs": 744,
       "bytes": 9831,
       "items": 10,
       "error": ""
@@ -89,7 +89,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news.xml",
       "category": "ニュース",
       "status": 200,
-      "elapsedMs": 700,
+      "elapsedMs": 759,
       "bytes": 8705,
       "items": 10,
       "error": ""
@@ -99,8 +99,8 @@
       "url": "https://www.tsr-net.co.jp/rss/news_analysis.xml",
       "category": "レポート",
       "status": 200,
-      "elapsedMs": 864,
-      "bytes": 78883,
+      "elapsedMs": 1098,
+      "bytes": 76440,
       "items": 10,
       "error": ""
     },
@@ -109,7 +109,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_detail.xml",
       "category": "エピソード",
       "status": 200,
-      "elapsedMs": 701,
+      "elapsedMs": 728,
       "bytes": 7744,
       "items": 10,
       "error": ""
@@ -119,8 +119,8 @@
       "url": "https://www.boj.or.jp/rss/statistics.xml",
       "category": "統計",
       "status": 200,
-      "elapsedMs": 583,
-      "bytes": 18913,
+      "elapsedMs": 625,
+      "bytes": 18912,
       "items": 58,
       "error": ""
     },
@@ -149,7 +149,7 @@
       "url": "https://www.mlit.go.jp/saigai.rdf",
       "category": "災害",
       "status": 304,
-      "elapsedMs": 424,
+      "elapsedMs": 780,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -158,10 +158,10 @@
       "name": "国土交通省",
       "url": "https://www.mlit.go.jp/pressrelease.rdf",
       "category": "ニュース",
-      "status": 200,
-      "elapsedMs": 47,
-      "bytes": 19851,
-      "items": 34,
+      "status": 304,
+      "elapsedMs": 562,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
@@ -169,9 +169,9 @@
       "url": "https://oilgas-info.jogmec.go.jp/rsslist/report_all.xml",
       "category": "エネルギー",
       "status": 200,
-      "elapsedMs": 804,
-      "bytes": 5888,
-      "items": 20,
+      "elapsedMs": 4703,
+      "bytes": 272308,
+      "items": 0,
       "error": ""
     },
     {
@@ -188,10 +188,10 @@
       "name": "税関",
       "url": "https://www.customs.go.jp/news.rss",
       "category": "税関",
-      "status": 200,
-      "elapsedMs": 820,
-      "bytes": 28689,
-      "items": 100,
+      "status": 304,
+      "elapsedMs": 940,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     }
   ]
