@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 import feedparser
 import requests
+import httpx  # ★追加
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -154,50 +155,106 @@ def read_latest_links() -> set[str]:
     return links
 
 
+def _update_http_cache_from_headers(http_cache: dict, url: str, headers: dict, prev_etag: str | None, prev_lastmod: str | None):
+    new_etag = headers.get("ETag") or headers.get("etag")
+    new_last_mod = headers.get("Last-Modified") or headers.get("last-modified")
+    if new_etag or new_last_mod:
+        http_cache[url] = {
+            "etag": new_etag or prev_etag or "",
+            "lastModified": new_last_mod or prev_lastmod or "",
+            "updatedAt": now_jst().isoformat(timespec="seconds"),
+        }
+
+
 def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     """
     Return (content_bytes or None if 304), and info dict.
     Uses ETag/Last-Modified cache when available.
-    """
-    headers = {
-        "User-Agent": "rss-collector/1.0 (+https://github.com/)",
-        "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
-    }
 
+    方針：
+    - まず requests（軽い）で試す
+    - タイムアウト/接続系でコケたら httpx(http2/redirects) をブラウザ寄りヘッダで再試行
+    """
     cached = http_cache.get(url, {}) if isinstance(http_cache, dict) else {}
     etag = cached.get("etag")
     last_mod = cached.get("lastModified")
 
-    if etag:
-        headers["If-None-Match"] = etag
-    if last_mod:
-        headers["If-Modified-Since"] = last_mod
-
-    t0 = time.monotonic()
-    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-    elapsed_ms = int((time.monotonic() - t0) * 1000)
-
-    info = {
-        "status": r.status_code,
-        "elapsedMs": elapsed_ms,
-        "bytes": len(r.content) if r.content else 0,
+    # なるべくブラウザっぽいが、br は要求しない（依存を増やさないため）
+    base_headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
     }
+    if etag:
+        base_headers["If-None-Match"] = etag
+    if last_mod:
+        base_headers["If-Modified-Since"] = last_mod
 
-    # cache update (even when 304 sometimes)
-    new_etag = r.headers.get("ETag")
-    new_last_mod = r.headers.get("Last-Modified")
-    if new_etag or new_last_mod:
-        http_cache[url] = {
-            "etag": new_etag or etag or "",
-            "lastModified": new_last_mod or last_mod or "",
-            "updatedAt": now_jst().isoformat(timespec="seconds"),
+    # ---- 1) requests ----
+    t0 = time.monotonic()
+    try:
+        r = requests.get(url, headers=base_headers, timeout=REQUEST_TIMEOUT)
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+
+        info = {
+            "status": r.status_code,
+            "elapsedMs": elapsed_ms,
+            "bytes": len(r.content) if r.content else 0,
         }
 
-    if r.status_code == 304:
-        return None, info
+        _update_http_cache_from_headers(http_cache, url, r.headers, etag, last_mod)
 
-    r.raise_for_status()
-    return r.content, info
+        if r.status_code == 304:
+            return None, info
+
+        r.raise_for_status()
+        return r.content, info
+
+    except (requests.Timeout, requests.ConnectionError) as e:
+        # requests が相性悪い相手は httpx で再挑戦
+        pass
+    except Exception as e:
+        # その他はそのまま上位へ
+        raise
+
+    # ---- 2) httpx (http2 + follow_redirects) ----
+    timeout = httpx.Timeout(connect=CONNECT_TIMEOUT_SEC, read=READ_TIMEOUT_SEC, write=READ_TIMEOUT_SEC, pool=READ_TIMEOUT_SEC)
+
+    last_err = None
+    for attempt in range(2):  # 2回だけ（軽いリトライ）
+        t1 = time.monotonic()
+        try:
+            with httpx.Client(http2=True, follow_redirects=True, timeout=timeout, headers=base_headers) as client:
+                resp = client.get(url)
+            elapsed_ms = int((time.monotonic() - t1) * 1000)
+
+            info = {
+                "status": resp.status_code,
+                "elapsedMs": elapsed_ms,
+                "bytes": len(resp.content) if resp.content else 0,
+            }
+
+            _update_http_cache_from_headers(http_cache, url, dict(resp.headers), etag, last_mod)
+
+            if resp.status_code == 304:
+                return None, info
+
+            resp.raise_for_status()
+            return resp.content, info
+
+        except Exception as e:
+            last_err = e
+            # ちょい間を置いて再トライ
+            time.sleep(0.25)
+
+    # 最後は例外として返す（呼び元で metrics に error が入る）
+    raise last_err
 
 
 def normalize_entry(entry, source_name: str, source_category: str) -> dict | None:
@@ -254,7 +311,6 @@ def collect_all() -> tuple[list[dict], list[dict]]:
             m["bytes"] = info.get("bytes")
 
             if content is None:
-                # 304 Not Modified
                 metrics.append(m)
                 continue
 
@@ -274,10 +330,8 @@ def collect_all() -> tuple[list[dict], list[dict]]:
             print(f"[WARN] fetch failed: {name} {url} -> {e}")
             continue
 
-    # save http cache
     save_http_cache(http_cache)
 
-    # dedupe within batch by link, keep newest pubDate
     best = {}
     for it in out:
         lk = it["link"]
