@@ -224,7 +224,7 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
         raise
 
     # ---- 2) httpx (http2 + follow_redirects) ----
-    timeout = httpx.Timeout(connect=CONNECT_TIMEOUT_SEC, read=READ_TIMEOUT_SEC, write=READ_TIMEOUT_SEC, pool=READ_TIMEOUT_SEC)
+    timeout = httpx.Timeout(CONNECT_TIMEOUT_SEC, read=READ_TIMEOUT_SEC)
 
     last_err = None
     for attempt in range(2):  # 2回だけ（軽いリトライ）
