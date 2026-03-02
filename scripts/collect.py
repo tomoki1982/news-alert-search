@@ -3,6 +3,7 @@ import json
 import gzip
 import shutil
 import time
+import subprocess
 from pathlib import Path
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -164,7 +165,27 @@ def _update_http_cache_from_headers(http_cache: dict, url: str, headers: dict, p
             "lastModified": new_last_mod or prev_lastmod or "",
             "updatedAt": now_jst().isoformat(timespec="seconds"),
         }
-
+        
+    def fetch_by_curl(url: str) -> bytes:
+    ua = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    )
+    # --ipv4: これが刺さるケースがある
+    # --max-time: 全体の上限（秒）
+    cmd = [
+        "curl", "-L", "--compressed",
+        "--ipv4",
+        "-A", ua,
+        "--connect-timeout", str(CONNECT_TIMEOUT_SEC),
+        "--max-time", "20",
+        url,
+    ]
+    p = subprocess.run(cmd, capture_output=True)
+    if p.returncode != 0:
+        raise RuntimeError((p.stderr or b"").decode("utf-8", "replace").strip() or "curl failed")
+    return p.stdout    
 
 def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     """
@@ -230,8 +251,19 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     for attempt in range(2):  # 2回だけ（軽いリトライ）
         t1 = time.monotonic()
         try:
+            use_curl = (
+  　　　　　　  "www.meti.go.jp" in url
+   　　　　　　　 or "www.chusho.meti.go.jp" in url
+　　　　　　　)
+
+　　　     　if use_curl:
+　　　         content = fetch_by_curl(url)
+ 　　　　      elapsed_ms = int((time.monotonic() - t0) * 1000)
+ 　　　　      info = {"status": 200, "elapsedMs": elapsed_ms, "bytes": len(content)}
+ 　　　　　    return content, info
+
             with httpx.Client(http2=True, follow_redirects=True, timeout=timeout, headers=base_headers) as client:
-                resp = client.get(url)
+                    resp = client.get(url)
             elapsed_ms = int((time.monotonic() - t1) * 1000)
 
             info = {
