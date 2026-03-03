@@ -302,5 +302,21 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "災害"
+  },
+  {
+    "id": "frightwaves-w0x6",
+    "name": "FrightWaves",
+    "url": "https://www.freightwaves.com/rss",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "運輸"
+  },
+  {
+    "id": "supply-chain-dive-4xgy",
+    "name": "Supply Chain Dive",
+    "url": "https://www.supplychaindive.com/feeds/news/",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "運輸"
   }
 ]
