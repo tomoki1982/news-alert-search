@@ -173,24 +173,34 @@ def fetch_by_curl(url: str) -> bytes:
         "Chrome/122.0.0.0 Safari/537.36"
     )
 
-    cmd = [
-        "curl", "-L", "--compressed",
-        "--ipv4",
-        "-A", ua,
-        "--connect-timeout", str(CONNECT_TIMEOUT_SEC),
-        "--max-time", "20",
-        url,
-    ]
+    def run(extra_args: list[str]) -> bytes:
+        cmd = [
+            "curl",
+            "-sS",              # ★進捗を消してエラーだけ表示
+            "-L",
+            "--compressed",
+            "--http1.1",        # ★http2相性回避（効くことある）
+            "-A", ua,
+            "--connect-timeout", str(CONNECT_TIMEOUT_SEC),
+            "--max-time", "60", # ★20→60（ここ重要）
+            "--retry", "2",     # ★軽くリトライ
+            "--retry-delay", "1",
+            "--retry-all-errors",
+            *extra_args,
+            url,
+        ]
+        p = subprocess.run(cmd, capture_output=True)
+        if p.returncode != 0:
+            err = (p.stderr or b"").decode("utf-8", "replace").strip() or "curl failed"
+            raise RuntimeError(err)
+        return p.stdout
 
-    p = subprocess.run(cmd, capture_output=True)
-
-    if p.returncode != 0:
-        raise RuntimeError(
-            (p.stderr or b"").decode("utf-8", "replace").strip()
-            or "curl failed"
-        )
-
-    return p.stdout   
+    # ①まず通常（IPv6/IPv4は環境任せ）
+    try:
+        return run([])
+    except Exception:
+        # ②ダメならIPv4固定で再挑戦（刺さるケースがある）
+        return run(["--ipv4"])   
 
 def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     headers = {
