@@ -98,18 +98,10 @@
   {
     "id": "rss-erhk",
     "name": "経済産業省",
-    "url": "https://www.meti.go.jp/ml_index_release_atom.xml",
+    "url": "https://journal.meti.go.jp/",
     "enabled": true,
     "frequency": "hourly",
-    "category": "ニュース"
-  },
-  {
-    "id": "rss-x5xk",
-    "name": "経済産業省",
-    "url": "https://www.meti.go.jp/statistics/st_news.xml",
-    "enabled": true,
-    "frequency": "hourly",
-    "category": "統計"
+    "category": "ジャーナル"
   },
   {
     "id": "rss-jhzk",
@@ -134,14 +126,6 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "エネルギー"
-  },
-  {
-    "id": "rss-yidd",
-    "name": "中小企業庁",
-    "url": "https://www.chusho.meti.go.jp/rss/index.xml",
-    "enabled": true,
-    "frequency": "hourly",
-    "category": "下請"
   },
   {
     "id": "ZEIKAN",
