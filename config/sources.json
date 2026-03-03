@@ -134,5 +134,125 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "税関"
+  },
+  {
+    "id": "rss-15q6",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/opinion.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "コラム"
+  },
+  {
+    "id": "rss-1tfa",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/economics.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "政治・経済"
+  },
+  {
+    "id": "rss-jkav",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/technology.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "マーケット"
+  },
+  {
+    "id": "rss-76eg",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/companies.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ニュース"
+  },
+  {
+    "id": "rss-1gqa",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/international.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ニュース"
+  },
+  {
+    "id": "rss-pa3r",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/finance.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "マーケット"
+  },
+  {
+    "id": "rss-ja7g",
+    "name": "ブルームバーグ",
+    "url": "https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "マーケット"
+  },
+  {
+    "id": "rss-2t5j",
+    "name": "ロイター",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/opinion.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "オピニオン"
+  },
+  {
+    "id": "rss-b9z9",
+    "name": "ロイター",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/business.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ビジネス"
+  },
+  {
+    "id": "rss-rhg0",
+    "name": "ロイター",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/economy.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "経済"
+  },
+  {
+    "id": "rss-tykk",
+    "name": "ロイター",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/markets.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "マーケット"
+  },
+  {
+    "id": "rss-udiq",
+    "name": "ロイター",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/world.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ワールド"
+  },
+  {
+    "id": "rss-t1lv",
+    "name": "ロイター",
+    "url": "https://assets.wor.jp/rss/rdf/reuters/top.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "速報"
+  },
+  {
+    "id": "rss-j817",
+    "name": "内閣府",
+    "url": "https://www.cao.go.jp/rss/news.rdf",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "政治・経済"
+  },
+  {
+    "id": "rss-i0x7",
+    "name": "日本銀行",
+    "url": "https://www.mof.go.jp/rss/index.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "政治・経済"
   }
 ]
