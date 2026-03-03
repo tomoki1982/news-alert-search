@@ -254,5 +254,13 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "政治・経済"
+  },
+  {
+    "id": "rss-3934",
+    "name": "地震速報(海外)",
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.atom",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "災害"
   }
 ]
