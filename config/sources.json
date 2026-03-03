@@ -262,5 +262,45 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "災害"
+  },
+  {
+    "id": "opec-vcwn",
+    "name": "OPEC",
+    "url": "https://www.opec.org/opec_web/en/press_room/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "エネルギー"
+  },
+  {
+    "id": "rss-9ppe",
+    "name": "米国エネルギー情報局",
+    "url": "https://www.eia.gov/rss/todayinenergy.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "エネルギー"
+  },
+  {
+    "id": "eu-nggb",
+    "name": "EU災害警報",
+    "url": "https://www.gdacs.org/xml/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "災害"
+  },
+  {
+    "id": "usgs-hkwp",
+    "name": "USGS地震",
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.atom",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "災害"
+  },
+  {
+    "id": "rss-x3fs",
+    "name": "国連系災害情報",
+    "url": "https://reliefweb.int/updates/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "災害"
   }
 ]
