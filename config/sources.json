@@ -250,7 +250,7 @@
   {
     "id": "rss-i0x7",
     "name": "日本銀行",
-    "url": "https://www.mof.go.jp/rss/index.xml",
+    "url": "https://www.boj.or.jp/rss/whatsnew.xml",
     "enabled": true,
     "frequency": "hourly",
     "category": "政治・経済"
