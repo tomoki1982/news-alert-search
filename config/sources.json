@@ -454,5 +454,14 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "ニュース"
+  },
+  {
+    "id": "rss-d646",
+    "name": "財務省",
+    "url": "https://www.mof.go.jp/news.rss",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "政治・経済"
   }
+]
 ]
