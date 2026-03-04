@@ -13,6 +13,8 @@ const PATHS = {
   archiveTemplate: "./archive/{YYYY}/{YYYY-MM}.ndjson.gz",
 };
 
+const OVERRIDES_CSV = "https://docs.google.com/spreadsheets/d/1dW4GlI8WsqFehny9w_W3tlBY-pG6VIcJmvhjyIw6SeU/export?format=csv&gid=0";
+
 const DEFAULT_RANGE = "3m";
 const MAX_YEARS = 5;
 
@@ -30,6 +32,9 @@ let STATE = {
   lastFiltered: [],
   theme: "light",
   showLimit: 30,
+
+  overridesMap: new Map(), // link -> {title, source, category, region, memo}
+  overridesLoadedAt: null, // 表示用
 };
 
 /* ---------- utils ---------- */
@@ -161,6 +166,189 @@ function toast(msg) {
   DOM.toast.textContent = msg;
   DOM.toast.style.opacity = "1";
   setTimeout(() => (DOM.toast.style.opacity = "0"), 1400);
+}
+
+/* ---------- overrides (Google Sheets CSV) ---------- */
+
+// ざっくりCSV（クォート対応）
+function parseCsv(text) {
+  const s = safeText(text);
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQ = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+
+    if (inQ) {
+      if (ch === '"') {
+        // "" -> "
+        if (s[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQ = false;
+        }
+      } else {
+        cur += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inQ = true;
+      continue;
+    }
+
+    if (ch === ",") {
+      row.push(cur);
+      cur = "";
+      continue;
+    }
+
+    if (ch === "\r") continue;
+
+    if (ch === "\n") {
+      row.push(cur);
+      rows.push(row);
+      row = [];
+      cur = "";
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  // last
+  if (cur.length || row.length) {
+    row.push(cur);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function normHeader(h) {
+  return safeText(h).trim().toLowerCase();
+}
+
+function normalizeUrl(u) {
+  // 完全一致が基本。最後の / だけは揺れることがあるので軽く正規化
+  let x = safeText(u).trim();
+  if (!x) return "";
+  // スキームなし等はそのまま（ここでは触らない）
+  x = x.replace(/#.*$/, ""); // hash 제거
+  x = x.replace(/\s+/g, "");
+  // 末尾スラッシュ統一（記事URLで困ること多い）
+  if (x.endsWith("/")) x = x.slice(0, -1);
+  return x;
+}
+
+async function loadOverridesMap() {
+  if (!OVERRIDES_CSV) return new Map();
+
+  try {
+    const r = await fetch(OVERRIDES_CSV, { cache: "no-store" });
+    if (!r.ok) throw new Error(`overrides fetch failed: ${r.status}`);
+
+    const csvText = await r.text();
+    const rows = parseCsv(csvText).filter((row) => row.some((c) => safeText(c).trim() !== ""));
+    if (!rows.length) return new Map();
+
+    const header = rows[0].map(normHeader);
+    const idx = (name) => header.indexOf(name);
+
+    const iLink = idx("link");
+    const iTitle = idx("title");
+    const iSource = idx("source");
+    const iCategory = idx("category");
+    const iRegion = idx("region");
+    const iMemo = idx("memo");
+
+    if (iLink < 0) throw new Error("overrides CSV: header 'link' not found");
+
+    const map = new Map();
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const linkRaw = row[iLink];
+      const link = normalizeUrl(linkRaw);
+      if (!link) continue;
+
+      const ov = {
+        title: safeText(iTitle >= 0 ? row[iTitle] : "").trim(),
+        source: safeText(iSource >= 0 ? row[iSource] : "").trim(),
+        category: safeText(iCategory >= 0 ? row[iCategory] : "").trim(),
+        region: safeText(iRegion >= 0 ? row[iRegion] : "").trim(),
+        memo: safeText(iMemo >= 0 ? row[iMemo] : "").trim(),
+      };
+
+      // 空欄だけの行はスキップ
+      if (!ov.title && !ov.source && !ov.category && !ov.region && !ov.memo) continue;
+
+      map.set(link, ov);
+    }
+
+    STATE.overridesLoadedAt = new Date().toISOString();
+    return map;
+  } catch (e) {
+    console.warn("overrides load failed", e);
+    STATE.overridesLoadedAt = null;
+    return new Map();
+  }
+}
+
+function applyOverridesToItems(items, overridesMap) {
+  if (!items?.length) return items;
+  if (!overridesMap || overridesMap.size === 0) return items;
+
+  for (const it of items) {
+    const lk = normalizeUrl(it.link);
+    const ov = overridesMap.get(lk);
+    if (!ov) continue;
+
+    // 「空欄なら上書きしない」
+    if (ov.title) it.title = ov.title;
+    if (ov.source) it.source = ov.source;
+    if (ov.category) it.category = ov.category;
+
+    // 追加項目（UIは後で拡張しやすい）
+    if (ov.region) it.region = ov.region;
+    if (ov.memo) it.memo = ov.memo;
+  }
+  return items;
+}
+
+async function loadOverrides() {
+  try {
+    const r = await fetch(OVERRIDES_CSV, { cache: "no-store" });
+    if (!r.ok) throw new Error("override fetch error");
+
+    const text = await r.text();
+    const rows = text.split("\n").map(r => r.split(","));
+
+    const map = new Map();
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const link = row[0];
+      if (!link) continue;
+
+      map.set(link.trim(), {
+        title: row[1],
+        source: row[2],
+        category: row[3],
+        region: row[4],
+        memo: row[5]
+      });
+    }
+
+    return map;
+  } catch (e) {
+    console.warn("override load failed", e);
+    return new Map();
+  }
 }
 
 /* ---------- fetch ---------- */
