@@ -264,14 +264,6 @@
     "category": "災害"
   },
   {
-    "id": "opec-vcwn",
-    "name": "OPEC",
-    "url": "https://www.opec.org/opec_web/en/press_room/rss.xml",
-    "enabled": true,
-    "frequency": "hourly",
-    "category": "エネルギー"
-  },
-  {
     "id": "rss-9ppe",
     "name": "米国エネルギー情報局",
     "url": "https://www.eia.gov/rss/todayinenergy.xml",
@@ -322,7 +314,7 @@
   {
     "id": "mining-weekly-e6e6",
     "name": "Mining Weekly",
-    "url": "https://www.miningweekly.com/page/rss",
+    "url": "https://www.miningweekly.com/page/australasia-home/feed",
     "enabled": true,
     "frequency": "hourly",
     "category": "資源"
