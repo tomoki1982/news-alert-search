@@ -320,37 +320,6 @@ function applyOverridesToItems(items, overridesMap) {
   return items;
 }
 
-async function loadOverrides() {
-  try {
-    const r = await fetch(OVERRIDES_CSV, { cache: "no-store" });
-    if (!r.ok) throw new Error("override fetch error");
-
-    const text = await r.text();
-    const rows = text.split("\n").map(r => r.split(","));
-
-    const map = new Map();
-
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const link = row[0];
-      if (!link) continue;
-
-      map.set(link.trim(), {
-        title: row[1],
-        source: row[2],
-        category: row[3],
-        region: row[4],
-        memo: row[5]
-      });
-    }
-
-    return map;
-  } catch (e) {
-    console.warn("override load failed", e);
-    return new Map();
-  }
-}
-
 /* ---------- fetch ---------- */
 async function fetchText(url) {
   const r = await fetch(url, { cache: "no-store" });
@@ -761,6 +730,10 @@ async function ensurePoolByRange(rangeValue) {
       try {
         const url = buildArchiveUrl(mk);
         const items = await fetchGzNdjson(url);
+
+        // overrides適用
+        applyOverridesToItems(items, STATE.overridesMap);
+
         STATE.allItemsCache.set(mk, items);
       } catch (e) {
         console.warn("archive load failed", mk, e);
@@ -1129,6 +1102,12 @@ async function main() {
 
   const latest = parseNDJSON(latestText);
   STATE.latestItems = dedupeByLink(latest);
+   
+    // --- overrides load & apply ---
+  STATE.overridesMap = await loadOverridesMap();
+
+  // latest items に上書きを反映
+  applyOverridesToItems(STATE.latestItems, STATE.overridesMap);
 
   STATE.currentPool = STATE.latestItems;
   STATE.lastFiltered = STATE.currentPool;
