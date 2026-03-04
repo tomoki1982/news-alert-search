@@ -318,5 +318,141 @@
     "enabled": true,
     "frequency": "hourly",
     "category": "運輸"
+  },
+  {
+    "id": "mining-weekly-e6e6",
+    "name": "Mining Weekly",
+    "url": "https://www.miningweekly.com/page/rss",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "資源"
+  },
+  {
+    "id": "mining-com-iilt",
+    "name": "Mining.COM",
+    "url": "https://www.mining.com/feed/",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "資源"
+  },
+  {
+    "id": "semi-s3tn",
+    "name": "SEMI",
+    "url": "https://www.semi.org/en/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "半導体"
+  },
+  {
+    "id": "digitimes-qtp1",
+    "name": "DigiTimes",
+    "url": "https://www.digitimes.com/rss/daily.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "半導体"
+  },
+  {
+    "id": "tom-s-hardware-semiconductor-htdy",
+    "name": "Tom's Hardware Semiconductor",
+    "url": "https://www.tomshardware.com/feeds/all",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "半導体"
+  },
+  {
+    "id": "ee-times-5w0m",
+    "name": "EE Times",
+    "url": "https://www.eetimes.com/feed/",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "半導体"
+  },
+  {
+    "id": "semiconductor-engineering-fpwb",
+    "name": "Semiconductor engineering",
+    "url": "https://semiengineering.com/feed/",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "半導体"
+  },
+  {
+    "id": "rss-ba0f",
+    "name": "フランス政府",
+    "url": "https://www.gouvernement.fr/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "公的"
+  },
+  {
+    "id": "financial-condct-authority-gw1s",
+    "name": "Financial Condct Authority",
+    "url": "https://www.fca.org.uk/news/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "経済"
+  },
+  {
+    "id": "uk-export-control-d7ng",
+    "name": "UK Export Control",
+    "url": "https://www.gov.uk/government/organisations/export-control-joint-unit.atom",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "運輸"
+  },
+  {
+    "id": "rss-lwv2",
+    "name": "欧州委員会",
+    "url": "https://ec.europa.eu/commission/presscorner/api/rss?language=en",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "公的"
+  },
+  {
+    "id": "engineering-nwes-oxar",
+    "name": "ENGINEERING NWES",
+    "url": "https://www.engineeringnews.co.za/page/home/feed",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "経済"
+  },
+  {
+    "id": "agencia-brasil-4kd9",
+    "name": "Agencia Brasil",
+    "url": "https://agenciabrasil.ebc.com.br/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "運輸"
+  },
+  {
+    "id": "saudi-press-agency-7dry",
+    "name": "Saudi Press Agency",
+    "url": "https://www.spa.gov.sa/rss.xml",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "経済"
+  },
+  {
+    "id": "business-standard-4kvm",
+    "name": "Business Standard",
+    "url": "https://www.gov.sg/rss/",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "経済"
+  },
+  {
+    "id": "uk-government-dpkg",
+    "name": "UK Government",
+    "url": "https://www.gov.uk/government/organisations/department-for-transport.atom",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "運輸"
+  },
+  {
+    "id": "eu-gsnn",
+    "name": "EUニュース",
+    "url": "https://www.euronews.com/rss",
+    "enabled": true,
+    "frequency": "hourly",
+    "category": "ニュース"
   }
 ]
