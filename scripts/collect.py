@@ -4,20 +4,28 @@ import gzip
 import shutil
 import time
 import subprocess
+import csv
+from io import StringIO
 from pathlib import Path
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from dateutil.relativedelta import relativedelta
 
 import feedparser
 import requests
-import httpx  # ★追加
+from dateutil.relativedelta import relativedelta
+
 
 JST = ZoneInfo("Asia/Tokyo")
 
 ROOT = Path(__file__).resolve().parents[1]
+
 CONFIG_SOURCES = ROOT / "config" / "sources.json"
 CONFIG_CACHE = ROOT / "config" / "http_cache.json"
+
+SOURCES_SHEET_CSV = os.getenv(
+    "SOURCES_SHEET_CSV",
+    "https://docs.google.com/spreadsheets/d/1dW4GlI8WsqFehny9w_W3tlBY-pG6VIcJmvhjyIw6SeU/export?format=csv&gid=1732849025"
+)
 
 DOCS_DIR = ROOT / "docs"
 DOCS_DATA_DIR = DOCS_DIR / "data"
@@ -30,14 +38,20 @@ ARCHIVE_DIR = ROOT / "archive"
 KEEP_YEARS = 5
 LATEST_MONTHS = 3
 
-# ---- timeouts (requested) ----
+# ---- timeouts ----
 CONNECT_TIMEOUT_SEC = 3
 READ_TIMEOUT_SEC = 5
-REQUEST_TIMEOUT = (CONNECT_TIMEOUT_SEC, READ_TIMEOUT_SEC)  # for requests
+REQUEST_TIMEOUT = (CONNECT_TIMEOUT_SEC, READ_TIMEOUT_SEC)
 
 
 def now_jst() -> datetime:
     return datetime.now(tz=JST)
+
+
+def safe_text(s):
+    if s is None:
+        return ""
+    return str(s).strip()
 
 
 def ensure_dirs():
@@ -46,7 +60,60 @@ def ensure_dirs():
     (ROOT / "config").mkdir(parents=True, exist_ok=True)
 
 
-def load_sources():
+def _to_bool(v) -> bool:
+    s = safe_text(v).lower()
+    return s in ("1", "true", "yes", "y", "on", "enabled", "○")
+
+
+def load_sources_from_sheet() -> list[dict]:
+    r = requests.get(
+        SOURCES_SHEET_CSV,
+        timeout=REQUEST_TIMEOUT,
+        headers={"User-Agent": "rss-collector/1.0"},
+    )
+    r.raise_for_status()
+
+    text = r.content.decode("utf-8-sig", errors="replace")
+    reader = csv.DictReader(StringIO(text))
+
+    out = []
+    for row in reader:
+        url = safe_text(row.get("url"))
+        if not url:
+            continue
+
+        enabled_raw = safe_text(row.get("enabled"))
+        enabled = True if enabled_raw == "" else _to_bool(enabled_raw)
+        if not enabled:
+            continue
+
+        item = {
+            "id": safe_text(row.get("id")) or safe_text(row.get("name")) or url,
+            "name": safe_text(row.get("name")) or safe_text(row.get("id")) or url,
+            "url": url,
+            "enabled": True,
+            "frequency": safe_text(row.get("frequency")) or "hourly",
+            "category": safe_text(row.get("category")),
+            "region": safe_text(row.get("region")),
+            "memo": safe_text(row.get("memo")),
+        }
+        out.append(item)
+
+    return out
+
+
+def load_sources() -> list[dict]:
+    # まず Google Sheets の sourceシートを読む
+    try:
+        data = load_sources_from_sheet()
+        if data:
+            print(f"[INFO] loaded sources from sheet: {len(data)}")
+            return data
+        print("[WARN] source sheet is empty -> fallback to sources.json")
+    except Exception as e:
+        print(f"[WARN] failed to load source sheet -> fallback to sources.json: {e}")
+
+    # 保険として sources.json にフォールバック
     with open(CONFIG_SOURCES, "r", encoding="utf-8") as f:
         data = json.load(f)
     return [s for s in data if s.get("enabled", True)]
@@ -69,14 +136,9 @@ def save_http_cache(cache: dict):
     tmp.replace(CONFIG_CACHE)
 
 
-def safe_text(s):
-    if s is None:
-        return ""
-    return str(s).strip()
-
-
 def parse_pubdate(entry) -> datetime | None:
     dt = None
+
     if hasattr(entry, "published_parsed") and entry.published_parsed:
         dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
     elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
@@ -94,6 +156,7 @@ def parse_pubdate(entry) -> datetime | None:
                     dt = dt.astimezone(timezone.utc)
             except Exception:
                 dt = None
+
     return dt
 
 
@@ -116,6 +179,7 @@ def archive_path_for_month(month_key: str) -> Path:
 def read_ndjson_gz(path: Path) -> list[dict]:
     if not path.exists():
         return []
+
     items = []
     with gzip.open(path, "rt", encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -126,6 +190,7 @@ def read_ndjson_gz(path: Path) -> list[dict]:
                 items.append(json.loads(line))
             except Exception:
                 continue
+
     return items
 
 
@@ -140,6 +205,7 @@ def write_ndjson_gz(path: Path, items: list[dict]):
 def read_latest_links() -> set[str]:
     if not LATEST_NDJSON.exists():
         return set()
+
     links = set()
     with open(LATEST_NDJSON, "r", encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -153,19 +219,10 @@ def read_latest_links() -> set[str]:
                     links.add(lk)
             except Exception:
                 continue
+
     return links
 
 
-def _update_http_cache_from_headers(http_cache: dict, url: str, headers: dict, prev_etag: str | None, prev_lastmod: str | None):
-    new_etag = headers.get("ETag") or headers.get("etag")
-    new_last_mod = headers.get("Last-Modified") or headers.get("last-modified")
-    if new_etag or new_last_mod:
-        http_cache[url] = {
-            "etag": new_etag or prev_etag or "",
-            "lastModified": new_last_mod or prev_lastmod or "",
-            "updatedAt": now_jst().isoformat(timespec="seconds"),
-        }
-        
 def fetch_by_curl(url: str) -> bytes:
     ua = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -176,14 +233,14 @@ def fetch_by_curl(url: str) -> bytes:
     def run(extra_args: list[str]) -> bytes:
         cmd = [
             "curl",
-            "-sS",              # ★進捗を消してエラーだけ表示
+            "-sS",
             "-L",
             "--compressed",
-            "--http1.1",        # ★http2相性回避（効くことある）
+            "--http1.1",
             "-A", ua,
             "--connect-timeout", str(CONNECT_TIMEOUT_SEC),
-            "--max-time", "60", # ★20→60（ここ重要）
-            "--retry", "2",     # ★軽くリトライ
+            "--max-time", "60",
+            "--retry", "2",
             "--retry-delay", "1",
             "--retry-all-errors",
             *extra_args,
@@ -195,12 +252,11 @@ def fetch_by_curl(url: str) -> bytes:
             raise RuntimeError(err)
         return p.stdout
 
-    # ①まず通常（IPv6/IPv4は環境任せ）
     try:
         return run([])
     except Exception:
-        # ②ダメならIPv4固定で再挑戦（刺さるケースがある）
-        return run(["--ipv4"])   
+        return run(["--ipv4"])
+
 
 def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     headers = {
@@ -217,49 +273,47 @@ def fetch_feed(url: str, http_cache: dict) -> tuple[bytes | None, dict]:
     if last_mod:
         headers["If-Modified-Since"] = last_mod
 
-    # ★ここは外でOK（tryの前）
     use_curl = (
         "www.meti.go.jp" in url
         or "www.chusho.meti.go.jp" in url
     )
 
-    # curl優先にしたいなら、tryの前で分岐するのが一番安全
     if use_curl:
         t0 = time.monotonic()
         content = fetch_by_curl(url)
         elapsed_ms = int((time.monotonic() - t0) * 1000)
-        info = {"status": 200, "elapsedMs": elapsed_ms, "bytes": len(content)}
+        info = {
+            "status": 200,
+            "elapsedMs": elapsed_ms,
+            "bytes": len(content),
+        }
         return content, info
 
     t0 = time.monotonic()
-    try:
-        r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-        elapsed_ms = int((time.monotonic() - t0) * 1000)
+    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+    elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-        info = {
-            "status": r.status_code,
-            "elapsedMs": elapsed_ms,
-            "bytes": len(r.content) if r.content else 0,
+    info = {
+        "status": r.status_code,
+        "elapsedMs": elapsed_ms,
+        "bytes": len(r.content) if r.content else 0,
+    }
+
+    new_etag = r.headers.get("ETag")
+    new_last_mod = r.headers.get("Last-Modified")
+    if new_etag or new_last_mod:
+        http_cache[url] = {
+            "etag": new_etag or etag or "",
+            "lastModified": new_last_mod or last_mod or "",
+            "updatedAt": now_jst().isoformat(timespec="seconds"),
         }
 
-        new_etag = r.headers.get("ETag")
-        new_last_mod = r.headers.get("Last-Modified")
-        if new_etag or new_last_mod:
-            http_cache[url] = {
-                "etag": new_etag or etag or "",
-                "lastModified": new_last_mod or last_mod or "",
-                "updatedAt": now_jst().isoformat(timespec="seconds"),
-            }
+    if r.status_code == 304:
+        return None, info
 
-        if r.status_code == 304:
-            return None, info
+    r.raise_for_status()
+    return r.content, info
 
-        r.raise_for_status()
-        return r.content, info
-
-    except Exception:
-        # 必要ならここでraiseして上に投げる
-        raise
 
 def normalize_entry(entry, source_name: str, source_category: str) -> dict | None:
     title = safe_text(getattr(entry, "title", ""))
@@ -320,6 +374,7 @@ def collect_all() -> tuple[list[dict], list[dict]]:
 
             feed = feedparser.parse(content)
             entries = getattr(feed, "entries", []) or []
+
             for entry in entries:
                 it = normalize_entry(entry, name, category)
                 if it:
@@ -385,6 +440,7 @@ def list_months_in_archive() -> list[str]:
     months = []
     if not ARCHIVE_DIR.exists():
         return months
+
     for year_dir in sorted(ARCHIVE_DIR.glob("[0-9][0-9][0-9][0-9]")):
         if not year_dir.is_dir():
             continue
@@ -392,6 +448,7 @@ def list_months_in_archive() -> list[str]:
             stem = f.name.replace(".ndjson.gz", "")
             if len(stem) == 7 and stem[4] == "-":
                 months.append(stem)
+
     return sorted(set(months))
 
 
@@ -475,7 +532,7 @@ def write_feed_metrics(metrics: list[dict]):
         "generatedAt": now_jst().isoformat(timespec="seconds"),
         "connectTimeoutSec": CONNECT_TIMEOUT_SEC,
         "readTimeoutSec": READ_TIMEOUT_SEC,
-        "timeoutSec": READ_TIMEOUT_SEC,  # legacy single value (display-friendly)
+        "timeoutSec": READ_TIMEOUT_SEC,
         "sources": metrics,
     }
     with open(FEED_METRICS_JSON, "w", encoding="utf-8") as f:
