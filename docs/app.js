@@ -646,18 +646,21 @@ function renderList(items) {
     const category = escapeHtml(it.category || "");
     const dt = escapeHtml(formatLocal(it.pubDate || ""));
     const link = escapeHtml(it.link || "");
+    const region = escapeHtml(it.region || "");
+    const memo = escapeHtml(it.memo || "");
 
     return `
     <div class="card" data-link="${link}">
       <div class="title">${title}</div>
       <div class="meta">
-        <span class="pill">${source || "?"}</span>
+         <span class="pill">${source || "?"}</span>
         ${category ? `<span class="pill pill-lite">${category}</span>` : ""}
+        ${region ? `<span class="pill pill-lite">${region}</span>` : ""}
         ${dt ? `<span class="dt">${dt}</span>` : ""}
-      </div>
       <div class="actions">
         <button class="btn btn-primary" data-act="open" data-url="${link}">元記事を開く</button>
         <button class="btn" data-act="copy" data-url="${link}">URLコピー</button>
+        ${memo ? `<div class="memo">${memo}</div>` : ""}
       </div>
     </div>`;
   })
@@ -750,6 +753,7 @@ async function ensurePoolByRange(rangeValue) {
   }
   merged.push(...STATE.latestItems);
   STATE.currentPool = dedupeByLink(merged);
+  applyOverridesToItems(STATE.currentPool, STATE.overridesMap);
 }
 
 /* ---------- theme ---------- */
@@ -1102,6 +1106,9 @@ async function main() {
 
   const latest = parseNDJSON(latestText);
   STATE.latestItems = dedupeByLink(latest);
+
+  STATE.overridesMap = await loadOverridesMap();
+  applyOverridesToItems(STATE.latestItems, STATE.overridesMap);
    
     // --- overrides load & apply ---
   STATE.overridesMap = await loadOverridesMap();
