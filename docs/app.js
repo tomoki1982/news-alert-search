@@ -1046,6 +1046,7 @@ srcModeBtn.type = "button";
 srcModeBtn.className = "btn btn-lite";
 srcModeBtn.textContent = `ソース:${(STATE.filterMode.source || "in").toUpperCase()}`;
 srcModeBtn.style.marginLeft = "6px";
+srcModeBtn.style.minWidth = "120px";
 if (srcEl && srcEl.parentElement) {
   srcEl.parentElement.appendChild(srcModeBtn);
 }
@@ -1056,6 +1057,7 @@ catModeBtn.type = "button";
 catModeBtn.className = "btn btn-lite";
 catModeBtn.textContent = `カテゴリ:${(STATE.filterMode.category || "in").toUpperCase()}`;
 catModeBtn.style.marginLeft = "6px";
+catModeBtn.style.minWidth = "120px";
 if (catEl && catEl.parentElement) {
   catEl.parentElement.appendChild(catModeBtn);
 }
