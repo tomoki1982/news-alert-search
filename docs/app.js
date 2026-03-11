@@ -1044,7 +1044,7 @@ const srcModeBtn = document.createElement("button");
 srcModeBtn.id = "srcModeBtn";
 srcModeBtn.type = "button";
 srcModeBtn.className = "btn btn-lite";
-srcModeBtn.textContent = (STATE.filterMode.source || "in").toUpperCase();
+srcModeBtn.textContent = 'ソース:${(STATE.filterMode.source || "in").toUpperCase()}';
 srcModeBtn.style.marginLeft = "6px";
 if (srcEl && srcEl.parentElement) {
   srcEl.parentElement.appendChild(srcModeBtn);
@@ -1054,7 +1054,7 @@ const catModeBtn = document.createElement("button");
 catModeBtn.id = "catModeBtn";
 catModeBtn.type = "button";
 catModeBtn.className = "btn btn-lite";
-catModeBtn.textContent = (STATE.filterMode.category || "in").toUpperCase();
+catModeBtn.textContent = 'カテゴリ:${(STATE.filterMode.category || "in").toUpperCase()}';
 catModeBtn.style.marginLeft = "6px";
 if (catEl && catEl.parentElement) {
   catEl.parentElement.appendChild(catModeBtn);
@@ -1063,14 +1063,14 @@ if (catEl && catEl.parentElement) {
 srcModeBtn.addEventListener("click", () => {
   STATE.filterMode.source =
     STATE.filterMode.source === "in" ? "not" : "in";
-  srcModeBtn.textContent = STATE.filterMode.source.toUpperCase();
+  srcModeBtn.textContent = 'ソース:${STATE.filterMode.source.toUpperCase()}';
   applyFiltersAndRender();
 });
 
 catModeBtn.addEventListener("click", () => {
   STATE.filterMode.category =
     STATE.filterMode.category === "in" ? "not" : "in";
-  catModeBtn.textContent = STATE.filterMode.category.toUpperCase();
+  catModeBtn.textContent = 'カテゴリ:${STATE.filterMode.category.toUpperCase()}';
   applyFiltersAndRender();
 });
 
@@ -1101,8 +1101,8 @@ catModeBtn.addEventListener("click", () => {
 
       const srcModeBtn = qs("#srcModeBtn");
       const catModeBtn = qs("#catModeBtn");
-      if (srcModeBtn) srcModeBtn.textContent = "IN";
-      if (catModeBtn) catModeBtn.textContent = "IN";
+      if (srcModeBtn) srcModeBtn.textContent = "ソース:IN";
+      if (catModeBtn) catModeBtn.textContent = "カテゴリ:IN";
 
       await ensurePoolByRange(DEFAULT_RANGE);
       setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
