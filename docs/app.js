@@ -29,12 +29,17 @@ let STATE = {
   allItemsCache: new Map(), // month -> items[]
   loadedMonths: new Set(),
   currentPool: [],
-  lastFiltered: [],
+  lastFiltered: []
   theme: "light",
   showLimit: 30,
-
+   
   overridesMap: new Map(), // link -> {title, source, category, region, memo}
   overridesLoadedAt: null, // 表示用
+
+  filterMode: {
+   source: "in",
+   category: "in"
+  },
 };
 
 /* ---------- utils ---------- */
@@ -700,8 +705,15 @@ function applyFiltersAndRender() {
   const groups = parseQueryToGroups(query);
 
   const filtered = STATE.currentPool.filter((it) => {
-    if (selectedSource !== "__all__" && safeText(it.source) !== selectedSource) return false;
-    if (selectedCategory !== "__all__" && safeText(it.category) !== selectedCategory) return false;
+    if (selectedSource !== "__all__") {
+      if (STATE.filterMode.source === "in" && safeText(it.source) !== selectedSource) return false;
+      if (STATE.filterMode.source === "not" && safeText(it.source) === selectedSource) return false;
+      }
+
+   if (selectedCategory !== "__all__") {
+     if (STATE.filterMode.category === "in" && safeText(it.category) !== selectedCategory) return false;
+     if (STATE.filterMode.category === "not" && safeText(it.category) === selectedCategory) return false;
+     }
     return matchItemByGroups(it, groups);
   });
 
@@ -1012,6 +1024,9 @@ function ensureRssMemoButton() {
 function wireControls() {
   const { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, andBtn, orBtn, themeBtn } = getControls();
 
+  let srcMode = "IN";
+  let catMode = "IN";
+
   if (rangeEl && (!rangeEl.options || rangeEl.options.length <= 1)) {
     rangeEl.innerHTML = `
       <option value="3m">検索範囲：直近3か月（標準）</option>
@@ -1025,6 +1040,33 @@ function wireControls() {
   if (rangeEl) rangeEl.value = rangeEl.value || DEFAULT_RANGE;
 
   ensureShowLimitSelect();
+
+/* ===== IN / NOT ボタン追加 ===== */
+
+let srcMode = "IN";
+let catMode = "IN";
+
+const srcNotBtn = document.createElement("button");
+srcNotBtn.textContent = "IN";
+srcNotBtn.style.marginLeft = "6px";
+srcEl.parentElement.appendChild(srcNotBtn);
+
+const catNotBtn = document.createElement("button");
+catNotBtn.textContent = "IN";
+catNotBtn.style.marginLeft = "6px";
+catEl.parentElement.appendChild(catNotBtn);
+
+srcNotBtn.addEventListener("click", () => {
+  srcMode = srcMode === "IN" ? "NOT" : "IN";
+  srcNotBtn.textContent = srcMode;
+});
+
+catNotBtn.addEventListener("click", () => {
+  catMode = catMode === "IN" ? "NOT" : "IN";
+  catNotBtn.textContent = catMode;
+});
+
+/* ===== ここまで ===== */
 
   // ✅ まとめてコピーを必ず表示
   const copyBtn = ensureCopyUrlsButton();
