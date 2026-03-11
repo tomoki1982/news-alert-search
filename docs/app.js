@@ -668,7 +668,7 @@ function renderList(items) {
     ${memo ? `<div class="memo">${memo}</div>` : ""}
   </div>
 `;
-     
+  })  
   .join("");
 
   qsa("[data-act='open']", box).forEach((b) => {
