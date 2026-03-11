@@ -650,20 +650,25 @@ function renderList(items) {
     const memo = escapeHtml(it.memo || "");
 
     return `
-    <div class="card" data-link="${link}">
-      <div class="title">${title}</div>
-      <div class="meta">
-         <span class="pill">${source || "?"}</span>
-        ${category ? `<span class="pill pill-lite">${category}</span>` : ""}
-        ${region ? `<span class="pill pill-lite">${region}</span>` : ""}
-        ${dt ? `<span class="dt">${dt}</span>` : ""}
-      <div class="actions">
-        <button class="btn btn-primary" data-act="open" data-url="${link}">元記事を開く</button>
-        <button class="btn" data-act="copy" data-url="${link}">URLコピー</button>
-        ${memo ? `<div class="memo">${memo}</div>` : ""}
-      </div>
-    </div>`;
-  })
+  <div class="card" data-link="${link}">
+    <div class="title">${title}</div>
+
+    <div class="meta">
+      <span class="pill">${source || "?"}</span>
+      ${category ? `<span class="pill pill-lite">${category}</span>` : ""}
+      ${region ? `<span class="pill pill-lite">${region}</span>` : ""}
+      ${dt ? `<span class="dt">${dt}</span>` : ""}
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" data-act="open" data-url="${link}">元記事を開く</button>
+      <button class="btn" data-act="copy" data-url="${link}">URLコピー</button>
+    </div>
+
+    ${memo ? `<div class="memo">${memo}</div>` : ""}
+  </div>
+`;
+     
   .join("");
 
   qsa("[data-act='open']", box).forEach((b) => {
@@ -1109,12 +1114,6 @@ async function main() {
 
   STATE.overridesMap = await loadOverridesMap();
   applyOverridesToItems(STATE.latestItems, STATE.overridesMap);
-   
-    // --- overrides load & apply ---
-  STATE.overridesMap = await loadOverridesMap();
-
-  // latest items に上書きを反映
-  applyOverridesToItems(STATE.latestItems, STATE.overridesMap);
 
   STATE.currentPool = STATE.latestItems;
   STATE.lastFiltered = STATE.currentPool;
@@ -1132,7 +1131,7 @@ async function main() {
 
   renderList(STATE.currentPool);
   wireControls();
-　hideLegacyTexts();
+  hideLegacyTexts();
 }
 function hideLegacyTexts() {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
