@@ -29,7 +29,7 @@ let STATE = {
   allItemsCache: new Map(), // month -> items[]
   loadedMonths: new Set(),
   currentPool: [],
-  lastFiltered: []
+  lastFiltered: [],
   theme: "light",
   showLimit: 30,
    
@@ -1024,9 +1024,6 @@ function ensureRssMemoButton() {
 function wireControls() {
   const { qEl, srcEl, catEl, rangeEl, searchBtn, resetBtn, andBtn, orBtn, themeBtn } = getControls();
 
-  let srcMode = "IN";
-  let catMode = "IN";
-
   if (rangeEl && (!rangeEl.options || rangeEl.options.length <= 1)) {
     rangeEl.innerHTML = `
       <option value="3m">検索範囲：直近3か月（標準）</option>
@@ -1043,27 +1040,38 @@ function wireControls() {
 
 /* ===== IN / NOT ボタン追加 ===== */
 
-let srcMode = "IN";
-let catMode = "IN";
+const srcModeBtn = document.createElement("button");
+srcModeBtn.id = "srcModeBtn";
+srcModeBtn.type = "button";
+srcModeBtn.className = "btn btn-lite";
+srcModeBtn.textContent = (STATE.filterMode.source || "in").toUpperCase();
+srcModeBtn.style.marginLeft = "6px";
+if (srcEl && srcEl.parentElement) {
+  srcEl.parentElement.appendChild(srcModeBtn);
+}
 
-const srcNotBtn = document.createElement("button");
-srcNotBtn.textContent = "IN";
-srcNotBtn.style.marginLeft = "6px";
-srcEl.parentElement.appendChild(srcNotBtn);
+const catModeBtn = document.createElement("button");
+catModeBtn.id = "catModeBtn";
+catModeBtn.type = "button";
+catModeBtn.className = "btn btn-lite";
+catModeBtn.textContent = (STATE.filterMode.category || "in").toUpperCase();
+catModeBtn.style.marginLeft = "6px";
+if (catEl && catEl.parentElement) {
+  catEl.parentElement.appendChild(catModeBtn);
+}
 
-const catNotBtn = document.createElement("button");
-catNotBtn.textContent = "IN";
-catNotBtn.style.marginLeft = "6px";
-catEl.parentElement.appendChild(catNotBtn);
-
-srcNotBtn.addEventListener("click", () => {
-  srcMode = srcMode === "IN" ? "NOT" : "IN";
-  srcNotBtn.textContent = srcMode;
+srcModeBtn.addEventListener("click", () => {
+  STATE.filterMode.source =
+    STATE.filterMode.source === "in" ? "not" : "in";
+  srcModeBtn.textContent = STATE.filterMode.source.toUpperCase();
+  applyFiltersAndRender();
 });
 
-catNotBtn.addEventListener("click", () => {
-  catMode = catMode === "IN" ? "NOT" : "IN";
-  catNotBtn.textContent = catMode;
+catModeBtn.addEventListener("click", () => {
+  STATE.filterMode.category =
+    STATE.filterMode.category === "in" ? "not" : "in";
+  catModeBtn.textContent = STATE.filterMode.category.toUpperCase();
+  applyFiltersAndRender();
 });
 
 /* ===== ここまで ===== */
@@ -1087,6 +1095,14 @@ catNotBtn.addEventListener("click", () => {
       if (srcEl) srcEl.value = "__all__";
       if (catEl) catEl.value = "__all__";
       if (rangeEl) rangeEl.value = DEFAULT_RANGE;
+
+      STATE.filterMode.source = "in";
+      STATE.filterMode.category = "in";
+
+      const srcModeBtn = qs("#srcModeBtn");
+      const catModeBtn = qs("#catModeBtn");
+      if (srcModeBtn) srcModeBtn.textContent = "IN";
+      if (catModeBtn) catModeBtn.textContent = "IN";
 
       await ensurePoolByRange(DEFAULT_RANGE);
       setStatus(`準備OK（最新 ${STATE.latestItems.length} 件） / 検索範囲：${rangeLabel(DEFAULT_RANGE)}`);
