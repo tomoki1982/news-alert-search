@@ -1,33 +1,33 @@
 {
   "https://www.jetro.go.jp/rss/biznews.xml": {
-    "etag": "\"4100-650aa7cf19575-gzip\"",
-    "lastModified": "Thu, 30 Apr 2026 09:57:11 GMT",
-    "updatedAt": "2026-05-01T18:58:46+09:00"
+    "etag": "\"3f9f-650bb689dad4e-gzip\"",
+    "lastModified": "Fri, 01 May 2026 06:08:24 GMT",
+    "updatedAt": "2026-05-02T00:17:51+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/news.rdf": {
-    "etag": "W/\"fef5fe2f61eaefbca824e3fc3b2f57b6\"",
-    "lastModified": "Fri, 01 May 2026 07:14:41 GMT",
-    "updatedAt": "2026-05-01T18:58:47+09:00"
+    "etag": "W/\"14870e76a2088d73d85f65c7036dfd79\"",
+    "lastModified": "Fri, 01 May 2026 14:12:22 GMT",
+    "updatedAt": "2026-05-02T00:17:51+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf": {
-    "etag": "W/\"b45dc0c752420b43c0e36857581e72e0\"",
-    "lastModified": "Fri, 01 May 2026 09:10:54 GMT",
-    "updatedAt": "2026-05-01T18:58:47+09:00"
+    "etag": "W/\"5cd8482299a3a1ad1cad89a4269e278a\"",
+    "lastModified": "Fri, 01 May 2026 13:10:47 GMT",
+    "updatedAt": "2026-05-02T00:17:51+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/business.rdf": {
-    "etag": "W/\"1544925c46e2b1713763d5d2b2a90072\"",
-    "lastModified": "Fri, 01 May 2026 08:12:03 GMT",
-    "updatedAt": "2026-05-01T18:58:47+09:00"
+    "etag": "W/\"7f69b1d59a3156e57d9a1bc64bbe91e2\"",
+    "lastModified": "Fri, 01 May 2026 13:12:43 GMT",
+    "updatedAt": "2026-05-02T00:17:52+09:00"
   },
   "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf": {
-    "etag": "W/\"87ed3c3d0ab46146d4b16a06185dddf6\"",
-    "lastModified": "Fri, 01 May 2026 08:13:40 GMT",
-    "updatedAt": "2026-05-01T18:58:47+09:00"
+    "etag": "W/\"2a147e66dffa5db03b76c20e092a8c70\"",
+    "lastModified": "Fri, 01 May 2026 13:15:07 GMT",
+    "updatedAt": "2026-05-02T00:17:52+09:00"
   },
   "https://www.tdb.co.jp/rss/jouhou.rdf": {
-    "etag": "W/\"4e15-650be41babefa\"",
+    "etag": "\"4e15-650be41babefa\"",
     "lastModified": "Fri, 01 May 2026 09:32:17 GMT",
-    "updatedAt": "2026-05-01T18:58:47+09:00"
+    "updatedAt": "2026-05-02T00:17:51+09:00"
   },
   "https://www.tsr-net.co.jp/rss/news_status.xml": {
     "etag": "",
@@ -57,12 +57,12 @@
   "https://www.mlit.go.jp/saigai.rdf": {
     "etag": "W/\"cabe37b4a95f59ee3707448db4cd9755\"",
     "lastModified": "Fri, 01 May 2026 09:00:30 GMT",
-    "updatedAt": "2026-05-01T18:58:52+09:00"
+    "updatedAt": "2026-05-02T00:17:57+09:00"
   },
   "https://www.mlit.go.jp/pressrelease.rdf": {
     "etag": "W/\"2f92acccb70c355255537e60d9dbd335\"",
     "lastModified": "Fri, 01 May 2026 07:20:47 GMT",
-    "updatedAt": "2026-05-01T18:58:53+09:00"
+    "updatedAt": "2026-05-02T00:17:57+09:00"
   },
   "https://oilgas-info.jogmec.go.jp/rsslist/report_all.xml": {
     "etag": "\"1700-64c02d470b69a\"",
@@ -72,77 +72,77 @@
   "https://www.customs.go.jp/news.rss": {
     "etag": "",
     "lastModified": "Fri, 01 May 2026 07:26:20 GMT",
-    "updatedAt": "2026-05-01T18:58:54+09:00"
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/opinion.rdf": {
-    "etag": "W/\"523ced0e16e516e7bd969bad800120da\"",
-    "lastModified": "Fri, 01 May 2026 08:11:49 GMT",
-    "updatedAt": "2026-05-01T18:58:54+09:00"
+    "etag": "W/\"8ed8bbe785dab67b8414970f38f8562a\"",
+    "lastModified": "Fri, 01 May 2026 14:11:00 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/economics.rdf": {
-    "etag": "W/\"d910ccf7fae39a72dfbb72c7cb9d3d0a\"",
-    "lastModified": "Fri, 01 May 2026 09:14:08 GMT",
-    "updatedAt": "2026-05-01T18:58:55+09:00"
+    "etag": "W/\"246b2dc2c672b35b88ce99ea92261f77\"",
+    "lastModified": "Fri, 01 May 2026 13:14:37 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/technology.rdf": {
-    "etag": "W/\"a1f02e99b9e1cb443e9b77c739c211c4\"",
-    "lastModified": "Fri, 01 May 2026 07:11:51 GMT",
-    "updatedAt": "2026-05-01T18:58:55+09:00"
+    "etag": "W/\"439ab6d9dc27f86316f6c1bc8fc45852\"",
+    "lastModified": "Fri, 01 May 2026 13:11:37 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/companies.rdf": {
-    "etag": "W/\"d7f42f61d385366d6b0617687079425c\"",
-    "lastModified": "Fri, 01 May 2026 07:11:07 GMT",
-    "updatedAt": "2026-05-01T18:58:55+09:00"
+    "etag": "W/\"a270fa27f93fc40dfefa823898e26749\"",
+    "lastModified": "Fri, 01 May 2026 14:12:21 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/international.rdf": {
-    "etag": "W/\"66f91d2951e64f566747b1374a4af23b\"",
-    "lastModified": "Fri, 01 May 2026 08:10:23 GMT",
-    "updatedAt": "2026-05-01T18:58:55+09:00"
+    "etag": "W/\"575625164e609ff9cccb230608578425\"",
+    "lastModified": "Fri, 01 May 2026 13:12:00 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/finance.rdf": {
-    "etag": "W/\"94d59471565a25854ceadfceb68e93ac\"",
-    "lastModified": "Fri, 01 May 2026 09:12:49 GMT",
-    "updatedAt": "2026-05-01T18:58:55+09:00"
+    "etag": "W/\"1d22d34b5c981267dde147bf1c7c1f2b\"",
+    "lastModified": "Fri, 01 May 2026 15:13:00 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf": {
-    "etag": "W/\"580c09a51115bc04bc33e81bc52e6465\"",
-    "lastModified": "Fri, 01 May 2026 09:10:38 GMT",
-    "updatedAt": "2026-05-01T18:58:56+09:00"
+    "etag": "W/\"3975c24aa3f2732a3ebba05118f53a22\"",
+    "lastModified": "Fri, 01 May 2026 14:12:44 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/reuters/opinion.rdf": {
-    "etag": "W/\"8393f9f6c7424cfc7e835bd34a870121\"",
-    "lastModified": "Fri, 01 May 2026 08:10:40 GMT",
-    "updatedAt": "2026-05-01T18:58:56+09:00"
+    "etag": "W/\"fae1d6cb5b17a47242ccd31c194e496f\"",
+    "lastModified": "Fri, 01 May 2026 14:13:37 GMT",
+    "updatedAt": "2026-05-02T00:17:58+09:00"
   },
   "https://assets.wor.jp/rss/rdf/reuters/business.rdf": {
-    "etag": "W/\"71db220e1022d7bbc2936d2afcbd53e4\"",
-    "lastModified": "Fri, 01 May 2026 09:13:25 GMT",
-    "updatedAt": "2026-05-01T18:58:56+09:00"
+    "etag": "W/\"a5e768f4f52493259e864b3deff84b85\"",
+    "lastModified": "Fri, 01 May 2026 14:15:03 GMT",
+    "updatedAt": "2026-05-02T00:17:59+09:00"
   },
   "https://assets.wor.jp/rss/rdf/reuters/economy.rdf": {
-    "etag": "W/\"ef239182b09e8189bc4b2ca0e2cf526f\"",
-    "lastModified": "Fri, 01 May 2026 09:11:03 GMT",
-    "updatedAt": "2026-05-01T18:58:56+09:00"
+    "etag": "W/\"83b6b080f0a896c2f83d6fc68b6c58c5\"",
+    "lastModified": "Fri, 01 May 2026 14:11:34 GMT",
+    "updatedAt": "2026-05-02T00:17:59+09:00"
   },
   "https://assets.wor.jp/rss/rdf/reuters/markets.rdf": {
-    "etag": "W/\"9317458d1c4283473488af8cfbf1acf6\"",
-    "lastModified": "Fri, 01 May 2026 09:12:36 GMT",
-    "updatedAt": "2026-05-01T18:58:57+09:00"
+    "etag": "W/\"827910f0594e661277ba28360b52c04e\"",
+    "lastModified": "Fri, 01 May 2026 14:13:48 GMT",
+    "updatedAt": "2026-05-02T00:17:59+09:00"
   },
   "https://assets.wor.jp/rss/rdf/reuters/world.rdf": {
-    "etag": "W/\"f606e47c3547cb6055773b20f8b46506\"",
-    "lastModified": "Fri, 01 May 2026 09:12:59 GMT",
-    "updatedAt": "2026-05-01T18:58:57+09:00"
+    "etag": "W/\"87475a664b8a4c8dde66501c0df2235a\"",
+    "lastModified": "Fri, 01 May 2026 13:12:27 GMT",
+    "updatedAt": "2026-05-02T00:17:59+09:00"
   },
   "https://assets.wor.jp/rss/rdf/reuters/top.rdf": {
-    "etag": "W/\"70133c308e55781667bf323dee9fde79\"",
-    "lastModified": "Fri, 01 May 2026 09:12:11 GMT",
-    "updatedAt": "2026-05-01T18:58:57+09:00"
+    "etag": "W/\"62f58c1cd74595c2f14042f37466ec05\"",
+    "lastModified": "Fri, 01 May 2026 14:13:27 GMT",
+    "updatedAt": "2026-05-02T00:17:59+09:00"
   },
   "https://www.cao.go.jp/rss/news.rdf": {
-    "etag": "\"18a7-650a65d84308d\"",
+    "etag": "W/\"18a7-650a65d843cd8\"",
     "lastModified": "Thu, 30 Apr 2026 05:02:04 GMT",
-    "updatedAt": "2026-05-01T18:58:58+09:00"
+    "updatedAt": "2026-05-02T00:18:00+09:00"
   },
   "https://www.mof.go.jp/rss/index.xml": {
     "etag": "\"4d71-61c7f0b897cb3\"",
@@ -151,33 +151,33 @@
   },
   "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.atom": {
     "etag": "",
-    "lastModified": "Fri, 01 May 2026 09:58:59 GMT",
-    "updatedAt": "2026-05-01T18:58:59+09:00"
+    "lastModified": "Fri, 01 May 2026 15:17:20 GMT",
+    "updatedAt": "2026-05-02T00:18:01+09:00"
   },
   "https://www.eia.gov/rss/todayinenergy.xml": {
     "etag": "\"069b7509bd8dc1:0\"",
     "lastModified": "Thu, 30 Apr 2026 12:17:30 GMT",
-    "updatedAt": "2026-05-01T18:58:59+09:00"
+    "updatedAt": "2026-05-02T00:18:01+09:00"
   },
   "https://www.gdacs.org/xml/rss.xml": {
-    "etag": "W/\"4025b19550d9dc1:0\"",
-    "lastModified": "Fri, 01 May 2026 09:55:04 GMT",
-    "updatedAt": "2026-05-01T18:59:00+09:00"
+    "etag": "W/\"66834f4b7dd9dc1:0\"",
+    "lastModified": "Fri, 01 May 2026 15:15:07 GMT",
+    "updatedAt": "2026-05-02T00:18:02+09:00"
   },
   "https://www.freightwaves.com/rss": {
-    "etag": "\"f509b05bf32047379d3535679d1be793\"",
-    "lastModified": "Thu, 30 Apr 2026 23:29:01 GMT",
-    "updatedAt": "2026-05-01T18:59:01+09:00"
+    "etag": "W/\"61efa090d1f20d3e16aa4f2e095a64fb\"",
+    "lastModified": "Fri, 01 May 2026 15:10:52 GMT",
+    "updatedAt": "2026-05-02T00:18:03+09:00"
   },
   "https://www.supplychaindive.com/feeds/news/": {
     "etag": "",
-    "lastModified": "Thu, 30 Apr 2026 21:02:00 GMT",
-    "updatedAt": "2026-05-01T18:59:01+09:00"
+    "lastModified": "Fri, 01 May 2026 14:05:00 GMT",
+    "updatedAt": "2026-05-02T00:18:03+09:00"
   },
   "https://www.digitimes.com/rss/daily.xml": {
-    "etag": "W/\"e323543849d9dc1:0\"",
-    "lastModified": "Fri, 01 May 2026 09:02:21 GMT",
-    "updatedAt": "2026-05-01T18:59:02+09:00"
+    "etag": "W/\"7fd6ab307bd9dc1:0\"",
+    "lastModified": "Fri, 01 May 2026 15:00:03 GMT",
+    "updatedAt": "2026-05-02T00:18:03+09:00"
   },
   "https://www.eetimes.com/feed/": {
     "etag": "W/\"af4759a058dbcbb57e433a3cb99a58a8\"",
@@ -185,19 +185,19 @@
     "updatedAt": "2026-03-29T10:04:17+09:00"
   },
   "https://semiengineering.com/feed/": {
-    "etag": "W/\"47cba8f7ff397f8985097cdbd748f68b\"",
-    "lastModified": "Fri, 01 May 2026 07:01:00 GMT",
-    "updatedAt": "2026-05-01T18:59:03+09:00"
+    "etag": "W/\"a04570bb192ef21f6d11423f20f3b646\"",
+    "lastModified": "Fri, 01 May 2026 13:20:58 GMT",
+    "updatedAt": "2026-05-02T00:18:04+09:00"
   },
   "https://www.fca.org.uk/news/rss.xml": {
-    "etag": "W/\"1777627362\"",
-    "lastModified": "Fri, 01 May 2026 09:22:42 GMT",
-    "updatedAt": "2026-05-01T18:59:03+09:00"
+    "etag": "W/\"1777648208\"",
+    "lastModified": "Fri, 01 May 2026 15:10:08 GMT",
+    "updatedAt": "2026-05-02T00:18:04+09:00"
   },
   "https://www.gov.uk/government/organisations/export-control-joint-unit.atom": {
-    "etag": "W/\"81c4cd5592bab1f51543ca5ff5a0160d\"",
+    "etag": "W/\"79a057db760a0be7c96c83d32dfee9d3\"",
     "lastModified": "",
-    "updatedAt": "2026-05-01T18:59:09+09:00"
+    "updatedAt": "2026-05-02T00:18:06+09:00"
   },
   "https://agenciabrasil.ebc.com.br/rss.xml": {
     "etag": "\"1772981377-1\"",
@@ -215,18 +215,18 @@
     "updatedAt": "2026-03-08T22:22:32+09:00"
   },
   "https://www.gov.uk/government/organisations/department-for-transport.atom": {
-    "etag": "W/\"df45bcfac1d1bc93bb45b8623093e6cc\"",
+    "etag": "W/\"3ead329f87ee98feab543a009680ad94\"",
     "lastModified": "",
-    "updatedAt": "2026-05-01T18:59:10+09:00"
+    "updatedAt": "2026-05-02T00:18:06+09:00"
   },
   "https://www.euronews.com/rss": {
-    "etag": "\"3847248acfcd9c0083b2dcab49ccb587\"",
-    "lastModified": "Fri, 01 May 2026 09:20:59 GMT",
-    "updatedAt": "2026-05-01T18:59:10+09:00"
+    "etag": "\"386b295e755d5194e796a1789505de51-br\"",
+    "lastModified": "Fri, 01 May 2026 15:11:28 GMT",
+    "updatedAt": "2026-05-02T00:18:06+09:00"
   },
   "https://www.mof.go.jp/news.rss": {
-    "etag": "\"74f6-650be65b154f7\"",
-    "lastModified": "Fri, 01 May 2026 09:42:20 GMT",
-    "updatedAt": "2026-05-01T18:59:11+09:00"
+    "etag": "\"74da-650bf948c2988\"",
+    "lastModified": "Fri, 01 May 2026 11:07:01 GMT",
+    "updatedAt": "2026-05-02T00:18:07+09:00"
   }
 }
