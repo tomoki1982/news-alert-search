@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T20:52:16+09:00",
+  "generatedAt": "2026-05-29T02:45:41+09:00",
   "connectTimeoutSec": 3,
   "readTimeoutSec": 5,
   "timeoutSec": 5,
@@ -9,7 +9,7 @@
       "url": "https://www.jetro.go.jp/rss/biznews.xml",
       "category": "公的",
       "status": 200,
-      "elapsedMs": 207,
+      "elapsedMs": 141,
       "bytes": 16310,
       "items": 40,
       "error": ""
@@ -19,7 +19,7 @@
       "url": "https://www.tdb.co.jp/rss/jouhou.rdf",
       "category": "倒産",
       "status": 304,
-      "elapsedMs": 768,
+      "elapsedMs": 741,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -29,8 +29,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/news.rdf",
       "category": "速報",
       "status": 200,
-      "elapsedMs": 64,
-      "bytes": 14119,
+      "elapsedMs": 149,
+      "bytes": 14158,
       "items": 30,
       "error": ""
     },
@@ -39,7 +39,7 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/economy.rdf",
       "category": "政治・経済",
       "status": 200,
-      "elapsedMs": 46,
+      "elapsedMs": 47,
       "bytes": 14327,
       "items": 30,
       "error": ""
@@ -49,8 +49,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/business.rdf",
       "category": "ビジネス",
       "status": 200,
-      "elapsedMs": 36,
-      "bytes": 14324,
+      "elapsedMs": 45,
+      "bytes": 14238,
       "items": 30,
       "error": ""
     },
@@ -59,8 +59,8 @@
       "url": "https://assets.wor.jp/rss/rdf/nikkei/markets.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 44,
-      "bytes": 14172,
+      "elapsedMs": 43,
+      "bytes": 14190,
       "items": 30,
       "error": ""
     },
@@ -69,7 +69,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_status.xml",
       "category": "倒産",
       "status": 200,
-      "elapsedMs": 872,
+      "elapsedMs": 579,
       "bytes": 9132,
       "items": 10,
       "error": ""
@@ -79,7 +79,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_flash.xml",
       "category": "速報",
       "status": 200,
-      "elapsedMs": 801,
+      "elapsedMs": 568,
       "bytes": 9827,
       "items": 10,
       "error": ""
@@ -89,7 +89,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news.xml",
       "category": "ニュース",
       "status": 200,
-      "elapsedMs": 740,
+      "elapsedMs": 464,
       "bytes": 8705,
       "items": 10,
       "error": ""
@@ -99,7 +99,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_analysis.xml",
       "category": "レポート",
       "status": 200,
-      "elapsedMs": 1003,
+      "elapsedMs": 461,
       "bytes": 82446,
       "items": 10,
       "error": ""
@@ -109,7 +109,7 @@
       "url": "https://www.tsr-net.co.jp/rss/news_detail.xml",
       "category": "エピソード",
       "status": 200,
-      "elapsedMs": 736,
+      "elapsedMs": 351,
       "bytes": 7744,
       "items": 10,
       "error": ""
@@ -119,7 +119,7 @@
       "url": "https://www.boj.or.jp/rss/statistics.xml",
       "category": "統計",
       "status": 200,
-      "elapsedMs": 665,
+      "elapsedMs": 413,
       "bytes": 20324,
       "items": 62,
       "error": ""
@@ -129,7 +129,7 @@
       "url": "https://journal.meti.go.jp/",
       "category": "ジャーナル",
       "status": 202,
-      "elapsedMs": 227,
+      "elapsedMs": 93,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -139,7 +139,7 @@
       "url": "https://www.mlit.go.jp/saigai.rdf",
       "category": "災害",
       "status": 304,
-      "elapsedMs": 254,
+      "elapsedMs": 553,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -148,10 +148,10 @@
       "name": "国土交通省",
       "url": "https://www.mlit.go.jp/pressrelease.rdf",
       "category": "ニュース",
-      "status": 200,
-      "elapsedMs": 609,
-      "bytes": 20607,
-      "items": 36,
+      "status": 304,
+      "elapsedMs": 43,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
@@ -159,7 +159,7 @@
       "url": "https://www.customs.go.jp/news.rss",
       "category": "税関",
       "status": 304,
-      "elapsedMs": 841,
+      "elapsedMs": 653,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -169,7 +169,7 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/opinion.rdf",
       "category": "コラム",
       "status": 200,
-      "elapsedMs": 34,
+      "elapsedMs": 51,
       "bytes": 6442,
       "items": 10,
       "error": ""
@@ -179,8 +179,8 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/economics.rdf",
       "category": "政治・経済",
       "status": 200,
-      "elapsedMs": 44,
-      "bytes": 6134,
+      "elapsedMs": 33,
+      "bytes": 6104,
       "items": 10,
       "error": ""
     },
@@ -189,8 +189,8 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/technology.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 43,
-      "bytes": 6126,
+      "elapsedMs": 41,
+      "bytes": 6135,
       "items": 10,
       "error": ""
     },
@@ -199,8 +199,8 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/companies.rdf",
       "category": "ニュース",
       "status": 200,
-      "elapsedMs": 47,
-      "bytes": 6081,
+      "elapsedMs": 42,
+      "bytes": 6075,
       "items": 10,
       "error": ""
     },
@@ -209,8 +209,8 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/international.rdf",
       "category": "ニュース",
       "status": 200,
-      "elapsedMs": 86,
-      "bytes": 6210,
+      "elapsedMs": 41,
+      "bytes": 6218,
       "items": 10,
       "error": ""
     },
@@ -219,7 +219,7 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/finance.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 102,
+      "elapsedMs": 40,
       "bytes": 6060,
       "items": 10,
       "error": ""
@@ -229,8 +229,8 @@
       "url": "https://assets.wor.jp/rss/rdf/bloomberg/markets.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 94,
-      "bytes": 6038,
+      "elapsedMs": 40,
+      "bytes": 6040,
       "items": 10,
       "error": ""
     },
@@ -239,9 +239,9 @@
       "url": "https://assets.wor.jp/rss/rdf/reuters/opinion.rdf",
       "category": "オピニオン",
       "status": 200,
-      "elapsedMs": 38,
-      "bytes": 11013,
-      "items": 20,
+      "elapsedMs": 39,
+      "bytes": 741,
+      "items": 0,
       "error": ""
     },
     {
@@ -249,7 +249,7 @@
       "url": "https://assets.wor.jp/rss/rdf/reuters/business.rdf",
       "category": "ビジネス",
       "status": 200,
-      "elapsedMs": 42,
+      "elapsedMs": 50,
       "bytes": 738,
       "items": 0,
       "error": ""
@@ -259,7 +259,7 @@
       "url": "https://assets.wor.jp/rss/rdf/reuters/economy.rdf",
       "category": "経済",
       "status": 200,
-      "elapsedMs": 46,
+      "elapsedMs": 44,
       "bytes": 723,
       "items": 0,
       "error": ""
@@ -269,8 +269,8 @@
       "url": "https://assets.wor.jp/rss/rdf/reuters/markets.rdf",
       "category": "マーケット",
       "status": 200,
-      "elapsedMs": 45,
-      "bytes": 6784,
+      "elapsedMs": 38,
+      "bytes": 6619,
       "items": 12,
       "error": ""
     },
@@ -289,7 +289,7 @@
       "url": "https://assets.wor.jp/rss/rdf/reuters/top.rdf",
       "category": "速報",
       "status": 200,
-      "elapsedMs": 51,
+      "elapsedMs": 44,
       "bytes": 752,
       "items": 0,
       "error": ""
@@ -298,10 +298,10 @@
       "name": "内閣府",
       "url": "https://www.cao.go.jp/rss/news.rdf",
       "category": "政治・経済",
-      "status": 200,
-      "elapsedMs": 1383,
-      "bytes": 6549,
-      "items": 10,
+      "status": 304,
+      "elapsedMs": 1028,
+      "bytes": 0,
+      "items": 0,
       "error": ""
     },
     {
@@ -309,7 +309,7 @@
       "url": "https://www.boj.or.jp/rss/whatsnew.xml",
       "category": "政治・経済",
       "status": 200,
-      "elapsedMs": 392,
+      "elapsedMs": 170,
       "bytes": 23796,
       "items": 71,
       "error": ""
@@ -319,19 +319,19 @@
       "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.atom",
       "category": "災害",
       "status": 200,
-      "elapsedMs": 105,
-      "bytes": 3560,
-      "items": 4,
+      "elapsedMs": 46,
+      "bytes": 4283,
+      "items": 5,
       "error": ""
     },
     {
       "name": "米国エネルギー情報局",
       "url": "https://www.eia.gov/rss/todayinenergy.xml",
       "category": "エネルギー",
-      "status": 304,
-      "elapsedMs": 121,
-      "bytes": 0,
-      "items": 0,
+      "status": 200,
+      "elapsedMs": 455,
+      "bytes": 22761,
+      "items": 30,
       "error": ""
     },
     {
@@ -339,8 +339,8 @@
       "url": "https://www.gdacs.org/xml/rss.xml",
       "category": "災害",
       "status": 200,
-      "elapsedMs": 914,
-      "bytes": 122159,
+      "elapsedMs": 1444,
+      "bytes": 122182,
       "items": 39,
       "error": ""
     },
@@ -349,7 +349,7 @@
       "url": "https://reliefweb.int/updates/rss.xml",
       "category": "災害",
       "status": 202,
-      "elapsedMs": 107,
+      "elapsedMs": 363,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -358,20 +358,20 @@
       "name": "FrightWaves",
       "url": "https://www.freightwaves.com/rss",
       "category": "運輸",
-      "status": 304,
-      "elapsedMs": 162,
-      "bytes": 0,
-      "items": 0,
+      "status": 200,
+      "elapsedMs": 432,
+      "bytes": 432717,
+      "items": 50,
       "error": ""
     },
     {
       "name": "Supply Chain Dive",
       "url": "https://www.supplychaindive.com/feeds/news/",
       "category": "運輸",
-      "status": 304,
-      "elapsedMs": 89,
-      "bytes": 0,
-      "items": 0,
+      "status": 200,
+      "elapsedMs": 137,
+      "bytes": 9307,
+      "items": 10,
       "error": ""
     },
     {
@@ -379,9 +379,9 @@
       "url": "https://www.digitimes.com/rss/daily.xml",
       "category": "半導体",
       "status": 200,
-      "elapsedMs": 314,
-      "bytes": 66454,
-      "items": 62,
+      "elapsedMs": 182,
+      "bytes": 67453,
+      "items": 63,
       "error": ""
     },
     {
@@ -389,8 +389,8 @@
       "url": "https://www.tomshardware.com/feeds/all",
       "category": "半導体",
       "status": 200,
-      "elapsedMs": 155,
-      "bytes": 178384,
+      "elapsedMs": 202,
+      "bytes": 177215,
       "items": 50,
       "error": ""
     },
@@ -399,8 +399,8 @@
       "url": "https://semiengineering.com/feed/",
       "category": "半導体",
       "status": 200,
-      "elapsedMs": 958,
-      "bytes": 151994,
+      "elapsedMs": 993,
+      "bytes": 167716,
       "items": 10,
       "error": ""
     },
@@ -409,7 +409,7 @@
       "url": "https://www.fca.org.uk/news/rss.xml",
       "category": "経済",
       "status": 200,
-      "elapsedMs": 160,
+      "elapsedMs": 52,
       "bytes": 53805,
       "items": 20,
       "error": ""
@@ -419,7 +419,7 @@
       "url": "https://www.gov.uk/government/organisations/export-control-joint-unit.atom",
       "category": "運輸",
       "status": 304,
-      "elapsedMs": 433,
+      "elapsedMs": 290,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -429,8 +429,8 @@
       "url": "https://ec.europa.eu/commission/presscorner/api/rss?language=en",
       "category": "公的",
       "status": 200,
-      "elapsedMs": 744,
-      "bytes": 7136,
+      "elapsedMs": 858,
+      "bytes": 7532,
       "items": 10,
       "error": ""
     },
@@ -439,8 +439,8 @@
       "url": "https://www.engineeringnews.co.za/page/home/feed",
       "category": "経済",
       "status": 200,
-      "elapsedMs": 525,
-      "bytes": 15116,
+      "elapsedMs": 1356,
+      "bytes": 12706,
       "items": 8,
       "error": ""
     },
@@ -449,7 +449,7 @@
       "url": "https://www.gov.uk/government/organisations/export-control-joint-unit.atom",
       "category": "運輸",
       "status": 304,
-      "elapsedMs": 26,
+      "elapsedMs": 25,
       "bytes": 0,
       "items": 0,
       "error": ""
@@ -459,8 +459,8 @@
       "url": "https://www.gov.uk/government/organisations/department-for-transport.atom",
       "category": "運輸",
       "status": 200,
-      "elapsedMs": 449,
-      "bytes": 12207,
+      "elapsedMs": 200,
+      "bytes": 12227,
       "items": 20,
       "error": ""
     },
@@ -469,8 +469,8 @@
       "url": "https://www.euronews.com/rss",
       "category": "ニュース",
       "status": 200,
-      "elapsedMs": 133,
-      "bytes": 33246,
+      "elapsedMs": 33,
+      "bytes": 33580,
       "items": 50,
       "error": ""
     },
@@ -479,7 +479,7 @@
       "url": "https://www.mof.go.jp/news.rss",
       "category": "政治・経済",
       "status": 200,
-      "elapsedMs": 1212,
+      "elapsedMs": 934,
       "bytes": 30276,
       "items": 100,
       "error": ""
