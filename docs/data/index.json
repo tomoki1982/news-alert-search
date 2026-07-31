@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-31T20:00:39+09:00",
+  "generatedAt": "2026-08-01T01:13:37+09:00",
   "keepYears": 5,
   "latestMonths": 3,
   "minMonth": "2023-04",
-  "maxMonth": "2026-07",
+  "maxMonth": "2026-08",
   "months": [
     "2023-04",
     "2023-08",
@@ -33,7 +33,8 @@
     "2026-04",
     "2026-05",
     "2026-06",
-    "2026-07"
+    "2026-07",
+    "2026-08"
   ],
   "archivePathTemplate": "archive/{YYYY}/{YYYY-MM}.ndjson.gz"
 }
